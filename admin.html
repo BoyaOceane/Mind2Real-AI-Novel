@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提示词管理 - 即文</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8f6f2;
+            --bg-secondary: #eee8df;
+            --bg-tertiary: #e3dbd0;
+            --surface-card: rgba(255, 255, 255, 0.92);
+            --surface-card-soft: rgba(255, 255, 255, 0.78);
+            --surface-overlay: rgba(45, 42, 38, 0.6);
+            --text-primary: #1f1d1a;
+            --text-secondary: #5c554c;
+            --text-muted: #8e867d;
+            --text-inverse: #ffffff;
+            --accent-primary: #c4971e;
+            --accent-secondary: #a8800d;
+            --accent-tertiary: #7a5f2e;
+            --accent-world: #3d7a9e;
+            --accent-protagonist: #9e5a3d;
+            --accent-narrative: #5a7a4e;
+            --success: #5a8a50;
+            --warning: #c88a3a;
+            --error: #b85555;
+            --info: #5b7aaa;
+            --border-light: #e0d9cf;
+            --border-medium: #ccc0ae;
+            --border-dark: #a89882;
+            --shadow-soft: 0 2px 12px rgba(100, 80, 50, 0.07), 0 4px 20px rgba(100, 80, 50, 0.05);
+            --shadow-medium: 0 4px 16px rgba(100, 80, 50, 0.10), 0 8px 30px rgba(100, 80, 50, 0.08);
+            --shadow-strong: 0 8px 24px rgba(100, 80, 50, 0.14), 0 14px 40px rgba(100, 80, 50, 0.10);
+            --shadow-glow: 0 4px 18px rgba(196, 151, 30, 0.35);
+            --topbar-bg: #2c2825;
+            --topbar-text: #e8e2d8;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+            --transition-slow: 0.5s ease;
+            --font-display: 'Ma Shan Zheng', cursive;
+            --font-body: 'Noto Serif SC', 'Songti SC', serif;
+            --font-code: 'Consolas', 'Monaco', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            height: 100%;
+        }
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            line-height: 1.7;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--topbar-bg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: var(--space-sm) var(--space-md);
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius-full);
+            color: var(--topbar-text);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.3);
+        }
+        .top-title {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            color: var(--topbar-text);
+            letter-spacing: 2px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-lg);
+        }
+        .blocks-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        /* Prompt Block */
+        .prompt-block {
+            background: var(--surface-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-medium);
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+        .prompt-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+        .prompt-block-title {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+        .prompt-block-title.world { color: var(--accent-world); }
+        .prompt-block-title.protagonist { color: var(--accent-protagonist); }
+        .prompt-block-title.story { color: var(--accent-primary); }
+        .prompt-block-title.narrative { color: var(--accent-narrative); }
+        .prompt-block-title.quiz { color: var(--accent-world); }
+        .prompt-block-title.profileExtract { color: var(--accent-protagonist); }
+        .prompt-block-title.options { color: var(--accent-primary); }
+        .prompt-block-title.novelConvert { color: var(--accent-narrative); }
+        .prompt-block-actions {
+            display: flex;
+            gap: var(--space-sm);
+        }
+        .btn {
+            padding: var(--space-xs) var(--space-md);
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-family: var(--font-body);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 1px solid var(--border-medium);
+            background: var(--surface-card);
+            color: var(--text-primary);
+        }
+        .btn:hover {
+            background: var(--bg-tertiary);
+        }
+        .btn-edit {
+            background: var(--accent-primary);
+            color: var(--text-inverse);
+            border-color: var(--accent-secondary);
+        }
+        .btn-edit:hover {
+            background: var(--accent-secondary);
+        }
+        .btn-save {
+            background: var(--success);
+            color: var(--text-inverse);
+            border-color: #4a7a40;
+        }
+        .btn-save:hover {
+            background: #4a7a40;
+        }
+        .btn-reset {
+            background: var(--surface-card);
+            color: var(--warning);
+            border-color: var(--warning);
+        }
+        .btn-reset:hover {
+            background: var(--warning);
+            color: var(--text-inverse);
+        }
+        .prompt-block-body {
+            padding: var(--space-lg);
+        }
+        .prompt-display {
+            display: block;
+        }
+        .prompt-edit {
+            display: none;
+        }
+        .prompt-display pre {
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background: var(--bg-primary);
+            padding: var(--space-md);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            max-height: 300px;
+            overflow-y: auto;
+            color: var(--text-secondary);
+        }
+        .prompt-edit textarea {
+            width: 100%;
+            min-height: 200px;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            padding: var(--space-md);
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--accent-primary);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            resize: vertical;
+            box-shadow: var(--shadow-glow);
+        }
+        .prompt-edit textarea:focus {
+            outline: none;
+            border-color: var(--accent-secondary);
+        }
+        .edit-actions {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
+            justify-content: flex-end;
+        }
+        .status-bar {
+            padding: var(--space-sm) var(--space-lg);
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+<script src="scripts/fiction.js"></script>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-left">
+            <a href="index.html" class="back-btn">
+                <span>&larr;</span>
+                <span>返回</span>
+            </a>
+        </div>
+        <h1 class="top-title">提示词管理</h1>
+        <div style="width: 80px;"></div>
+    </div>
+
+    <div class="main-content"><p style="padding:0 24px">世界与角色框架用于沉浸剧情；短篇节拍、姓名称呼和因果规则始终生效，旧自定义提示中的冲突要求不会覆盖阅读契约。</p>
+        <div class="blocks-container">
+            <!-- 世界观生成 -->
+            <div class="prompt-block" id="block-world">
+                <div class="prompt-block-header">
+                    <h2 class="prompt-block-title world">世界观生成</h2>
+                    <div class="prompt-block-actions">
+                        <button class="btn btn-edit" onclick="toggleEdit('world')">编辑</button>
+                        <button class="btn btn-reset" onclick="resetBlock('world', 'worldPrompt')">恢复默认</button>
+                    </div>
+                </div>
+                <div class="prompt-block-body">
+                    <div class="prompt-display" id="display-world">
+                        <pre></pre>
+                    </div>
+                    <div class="prompt-edit" id="edit-world">
+                        <textarea id="textarea-world" placeholder="请输入世界观生成提示词..."></textarea>
+                        <div class="edit-actions">
+                            <button class="btn" onclick="toggleEdit('world')">取消</button>
+                            <button class="btn btn-save" onclick="saveBlock('world', 'worldPrompt')">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <span id="status-world"></span>
+                    <span id="updatedAt-world"></span>
+                </div>
+            </div>
+
+            <!-- 主角生成 -->
+            <div class="prompt-block" id="block-protagonist">
+                <div class="prompt-block-header">
+                    <h2 class="prompt-block-title protagonist">角色塑造（主角、配角、对手）</h2>
+                    <div class="prompt-block-actions">
+                        <button class="btn btn-edit" onclick="toggleEdit('protagonist')">编辑</button>
+                        <button class="btn btn-reset" onclick="resetBlock('protagonist', 'protagonistPrompt')">恢复默认</button>
+                    </div>
+                </div>
+                <div class="prompt-block-body">
+                    <div class="prompt-display" id="display-protagonist">
+                        <pre></pre>
+                    </div>
+                    <div class="prompt-edit" id="edit-protagonist">
+                        <textarea id="textarea-protagonist" placeholder="请输入主角生成提示词..."></textarea>
+                        <div class="edit-actions">
+                            <button class="btn" onclick="toggleEdit('protagonist')">取消</button>
+                            <button class="btn btn-save" onclick="saveBlock('protagonist', 'protagonistPrompt')">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <span id="status-protagonist"></span>
+                    <span id="updatedAt-protagonist"></span>
+                </div>
+            </div>
+
+            <!-- 故事续写 -->
+            <div class="prompt-block" id="block-story">
+                <div class="prompt-block-header">
+                    <h2 class="prompt-block-title story">故事续写</h2>
+                    <div class="prompt-block-actions">
+                        <button class="btn btn-edit" onclick="toggleEdit('story')">编辑</button>
+                        <button class="btn btn-reset" onclick="resetBlock('story', 'storySystemPrompt')">恢复默认</button>
+                    </div>
+                </div>
+                <div class="prompt-block-body">
+                    <div class="prompt-display" id="display-story">
+                        <pre></pre>
+                    </div>
+                    <div class="prompt-edit" id="edit-story">
+                        <textarea id="textarea-story" placeholder="请输入故事续写提示词..."></textarea>
+                        <div class="edit-actions">
+                            <button class="btn" onclick="toggleEdit('story')">取消</button>
+                            <button class="btn btn-save" onclick="saveBlock('story', 'storySystemPrompt')">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <span id="status-story"></span>
+                    <span id="updatedAt-story"></span>
+                </div>
+            </div>
+
+            <!-- 叙事风格 -->
+            <div class="prompt-block" id="block-narrative">
+                <div class="prompt-block-header">
+                    <h2 class="prompt-block-title narrative">叙事风格</h2>
+                    <div class="prompt-block-actions">
+                        <button class="btn btn-edit" onclick="toggleEdit('narrative')">编辑</button>
+                        <button class="btn btn-reset" onclick="resetBlock('narrative', 'narrativeStylePrompt')">恢复默认</button>
+                    </div>
+                </div>
+                <div class="prompt-block-body">
+                    <div class="prompt-display" id="display-narrative">
+                        <pre></pre>
+                    </div>
+                    <div class="prompt-edit" id="edit-narrative">
+                        <textarea id="textarea-narrative" placeholder="请输入叙事风格提示词..."></textarea>
+                        <div class="edit-actions">
+                            <button class="btn" onclick="toggleEdit('narrative')">取消</button>
+                            <button class="btn btn-save" onclick="saveBlock('narrative', 'narrativeStylePrompt')">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <span id="status-narrative"></span>
+                    <span id="updatedAt-narrative"></span>
+                </div>
+            </div>
+
+            <!-- 开局心理测试 -->
+
+
+            <!-- 画像提取 -->
+
+
+            <!-- 选项生成 -->
+            <div class="prompt-block" id="block-options">
+                <div class="prompt-block-header">
+                    <h2 class="prompt-block-title options">选项生成</h2>
+                    <div class="prompt-block-actions">
+                        <button class="btn btn-edit" onclick="toggleEdit('options')">编辑</button>
+                        <button class="btn btn-reset" onclick="resetBlock('options', 'optionsPrompt')">恢复默认</button>
+                    </div>
+                </div>
+                <div class="prompt-block-body">
+                    <div class="prompt-display" id="display-options">
+                        <pre></pre>
+                    </div>
+                    <div class="prompt-edit" id="edit-options">
+                        <textarea id="textarea-options" placeholder="请输入选项生成提示词..."></textarea>
+                        <div class="edit-actions">
+                            <button class="btn" onclick="toggleEdit('options')">取消</button>
+                            <button class="btn btn-save" onclick="saveBlock('options', 'optionsPrompt')">保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <span id="status-options"></span>
+                    <span id="updatedAt-options"></span>
+                </div>
+            </div>
+
+            <!-- 小说改写 -->
+
+        </div>
+    </div>
+
+    <script>
+        // Default prompts
+        const defaultPrompts = {
+            worldPrompt: JimoFiction.worldDefault,
+            protagonistPrompt: JimoFiction.characterDefault,
+            storySystemPrompt: JimoFiction.storyDefault,
+            narrativeStylePrompt: JimoFiction.narrativeDefault,
+            optionsPrompt: JimoFiction.optionsDefault
+        };
+
+        // Load prompts from localStorage or use defaults
+        function loadPrompts() {
+            const saved = localStorage.getItem('prompt_config');
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    console.error('Failed to parse prompt_config:', e);
+                }
+            }
+            return null;
+        }
+
+        // Save prompts to localStorage
+        function savePrompts(prompts) {
+            prompts.updatedAt = new Date().toLocaleString('zh-CN');
+            localStorage.setItem('prompt_config', JSON.stringify(prompts));
+        }
+
+        // Get prompt by key
+        function getPrompt(key) {
+            const saved = loadPrompts();
+            if (saved && saved[key]) {
+                return saved[key];
+            }
+            return defaultPrompts[key] || '';
+        }
+
+        // Toggle edit mode for a block
+        function toggleEdit(blockName) {
+            const displayEl = document.getElementById('display-' + blockName);
+            const editEl = document.getElementById('edit-' + blockName);
+            const textarea = document.getElementById('textarea-' + blockName);
+
+            if (displayEl.style.display === 'none') {
+                // Cancel editing
+                displayEl.style.display = 'block';
+                editEl.style.display = 'none';
+            } else {
+                // Enter edit mode
+                textarea.value = getPrompt(getKey(blockName));
+                displayEl.style.display = 'none';
+                editEl.style.display = 'block';
+                textarea.focus();
+            }
+        }
+
+        // Get localStorage key from block name
+        function getKey(blockName) {
+            const keyMap = {
+                'world': 'worldPrompt',
+                'protagonist': 'protagonistPrompt',
+                'story': 'storySystemPrompt',
+                'narrative': 'narrativeStylePrompt',
+                'options': 'optionsPrompt',
+            };
+            return keyMap[blockName] || blockName + 'Prompt';
+        }
+
+        // Save block content to localStorage
+        function saveBlock(blockName, key) {
+            const textarea = document.getElementById('textarea-' + blockName);
+            const value = textarea.value.trim();
+
+            if (!value) {
+                showStatus(blockName, '内容不能为空', 'error');
+                return;
+            }
+
+            const prompts = loadPrompts() || {};
+            prompts[key] = value;
+            savePrompts(prompts);
+
+            // Update display
+            const displayEl = document.getElementById('display-' + blockName);
+            const editEl = document.getElementById('edit-' + blockName);
+            displayEl.querySelector('pre').textContent = value;
+            displayEl.style.display = 'block';
+            editEl.style.display = 'none';
+
+            showStatus(blockName, '已保存', 'success');
+            updateUpdatedAt(blockName);
+        }
+
+        // Reset block to default
+        function resetBlock(blockName, key) {
+            if (!confirm('确定要恢复默认提示词吗？当前修改将丢失。')) {
+                return;
+            }
+
+            const prompts = loadPrompts() || {};
+            prompts[key] = defaultPrompts[key];
+            savePrompts(prompts);
+
+            // Update display
+            const displayEl = document.getElementById('display-' + blockName);
+            displayEl.querySelector('pre').textContent = defaultPrompts[key];
+
+            showStatus(blockName, '已恢复默认', 'success');
+            updateUpdatedAt(blockName);
+        }
+
+        // Show status message
+        function showStatus(blockName, message, type) {
+            const statusEl = document.getElementById('status-' + blockName);
+            statusEl.textContent = message;
+            statusEl.style.color = type === 'error' ? 'var(--error)' : type === 'success' ? 'var(--success)' : 'var(--text-muted)';
+
+            setTimeout(() => {
+                statusEl.textContent = '';
+            }, 3000);
+        }
+
+        // Update updatedAt display
+        function updateUpdatedAt(blockName) {
+            const saved = loadPrompts();
+            if (saved && saved.updatedAt) {
+                document.getElementById('updatedAt-' + blockName).textContent = '更新于: ' + saved.updatedAt;
+            }
+        }
+
+        // Initialize page
+        function init() {
+            // Set display content
+            document.querySelector('#display-world pre').textContent = getPrompt('worldPrompt');
+            document.querySelector('#display-protagonist pre').textContent = getPrompt('protagonistPrompt');
+            document.querySelector('#display-story pre').textContent = getPrompt('storySystemPrompt');
+            document.querySelector('#display-narrative pre').textContent = getPrompt('narrativeStylePrompt');
+            document.querySelector('#display-options pre').textContent = getPrompt('optionsPrompt');
+
+            // Update all updatedAt displays
+            ['world', 'protagonist', 'story', 'narrative', 'options'].forEach(blockName => {
+                updateUpdatedAt(blockName);
+            });
+        }
+
+        // Run on page load
+        init();
+    </script>
+</body>
+</html>

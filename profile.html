@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>我的阅读偏好 — 即文</title><link rel="stylesheet" href="reader.css"></head>
+<body>
+<main class="reader-profile">
+    <a href="index.html" id="profileReturn">← 返回，不用先完成测评</a>
+    <p class="reader-eyebrow">即文 · 读懂你的期待</p>
+    <h1>我的阅读偏好</h1>
+    <p>设置代入姓名与性别，或了解自己的阅读期待。选好平时的口味与不想看的内容后保存。首页只需描述这次想看的剧情，测评可跳过。</p>
+    <p class="reader-note">偏好保存在本机。启用测评时，摘要与代入人设会发送给你配置的模型服务，原始问答记录不发送；标签和排除项用于新故事；首页的剧情描述单独应用，不会修改这些长期选择。</p>
+    <form id="profileForm">
+        <div class="reader-identity">
+            <label class="reader-name">故事里怎么称呼你？（可留空）<input id="playerName" maxlength="20" placeholder="留空时用“你”称呼" autocomplete="off"></label>
+            <label class="reader-name">主角性别（可选）<select id="playerGender"><option value="">不限定</option><option value="男">男</option><option value="女">女</option></select></label>
+        </div>
+        <p class="reader-note">姓名、性别和首页剧情想法不受下方测评开关影响；已有故事沿用原设定。</p>
+        <details id="genrePreferences"><summary>题材与口味（可多选）<span id="genreSelectionCount" class="reader-note"></span></summary>
+        <fieldset><legend>选择想看或不想看</legend>
+        <p class="reader-note">切换想看或不想看来选择标签；同一标签互斥，不选表示不限。</p>
+        <div class="genre-tabs" role="tablist" aria-label="想看或不想看">
+            <button id="wantedGenreTab" type="button" role="tab" aria-selected="true" aria-controls="wantedGenres">想看（0）</button>
+            <button id="excludedGenreTab" type="button" role="tab" aria-selected="false" aria-controls="excludedGenres" tabindex="-1">不想看（0）</button>
+        </div><div id="genreTags"></div></fieldset>
+        </details>
+        <details id="exclusionPreferences"><summary>长期避开的内容（可选）</summary><label for="excludedPreference">不想出现什么？</label><textarea id="excludedPreference" rows="2" maxlength="600" placeholder="例如：不要虐主，不要强加恋爱线。"></textarea></details>
+        <details id="extraPreferences"><summary>心理期待：想从故事中得到什么？（可选）</summary>
+        <div id="questions"></div>
+        <label for="profileSummary">你的偏好摘要（可以直接修改）</label>
+        <textarea id="profileSummary" rows="6" maxlength="1600" placeholder="未提供的倾向不作推测"></textarea>
+        </details>
+        <details id="selfCheck"><summary>人设自检：什么样的主角更像你？（可选）</summary>
+        <p class="reader-note">从日常反应了解自己的代入方式，没有标准答案，也不作心理诊断。可跳过、选自定义，或直接修改下方人设。</p>
+        <div id="selfQuestions"></div>
+        <label for="selfSummary">我的代入人设（可以直接修改）</label>
+        <textarea id="selfSummary" rows="5" maxlength="1000" placeholder="例如：平时先观察，遇到在乎的人被欺负时会主动站出来。"></textarea>
+        </details>
+        <p><label><input id="profileEnabled" type="checkbox" checked> 将心理期待与代入人设用于故事生成</label></p>
+        <div class="reader-actions"><button class="reader-primary" type="submit">保存偏好</button><button class="reader-secondary" id="clearProfile" type="button">清除偏好</button></div>
+    </form>
+    <p id="profileStatus" role="status"></p>
+</main>
+<script src="scripts/reader-preferences.js"></script>
+<script>
+const saved = JimoPreferences.load();
+const answers = saved?.answers || [];
+document.getElementById('playerName').value = JimoPreferences.playerName();
+document.getElementById('playerGender').value = JimoPreferences.playerGender();
+const tagHost = document.getElementById('genreTags');
+const genreModes = [
+    ['genreTag', '想看', 'wantedGenreTab', 'wantedGenres'],
+    ['excludedGenreTag', '不想看', 'excludedGenreTab', 'excludedGenres']
+];
+for (const [name, caption, tabId, panelId] of genreModes) {
+    const panel = document.createElement('div');
+    panel.id = panelId; panel.className = 'genre-panel'; panel.hidden = name !== 'genreTag';
+    panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', tabId);
+    JimoPreferences.tagGroups.forEach(([title, choices]) => {
+        const group = document.createElement('section'), heading = document.createElement('h2'), chips = document.createElement('div');
+        group.className = 'genre-group'; heading.textContent = title; chips.className = 'genre-chips';
+        choices.forEach(tag => {
+            const label = document.createElement('label'), input = document.createElement('input');
+            input.type = 'checkbox'; input.name = name; input.value = tag;
+            input.checked = name === 'excludedGenreTag' ? !!saved?.excludedTags?.includes(tag) : !!saved?.tags?.includes(tag) && !saved?.excludedTags?.includes(tag);
+            input.setAttribute('aria-label', caption + '：' + tag);
+            label.append(input, document.createTextNode(tag)); chips.append(label);
+        });
+        group.append(heading, chips); panel.append(group);
+    });
+    tagHost.append(panel);
+    document.getElementById(tabId).addEventListener('click', () => switchGenreMode(tabId));
+}
+function switchGenreMode(activeId) {
+    for (const [, , tabId, panelId] of genreModes) {
+        const active = tabId === activeId, tab = document.getElementById(tabId);
+        tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1;
+        document.getElementById(panelId).hidden = !active;
+    }
+}
+function updateGenreCounts() {
+    const counts = [];
+    for (const [name, caption, tabId] of genreModes) {
+        const count = tagHost.querySelectorAll(`input[name="${name}"]:checked`).length;
+        document.getElementById(tabId).textContent = `${caption}（${count}）`;
+        counts.push(`${caption} ${count}`);
+    }
+    document.getElementById('genreSelectionCount').textContent = ' · ' + counts.join(' · ');
+}
+document.querySelector('.genre-tabs').addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const index = genreModes.findIndex(([, , id]) => id === event.target.id);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : 1 - index;
+    const tab = document.getElementById(genreModes[next][2]); tab.click(); tab.focus();
+});
+tagHost.addEventListener('change', event => {
+    const input = event.target;
+    if (input.checked) {
+        const otherName = input.name === 'genreTag' ? 'excludedGenreTag' : 'genreTag';
+        [...tagHost.querySelectorAll('input')].find(other => other.name === otherName && other.value === input.value).checked = false;
+    }
+    updateGenreCounts();
+});
+updateGenreCounts();
+document.getElementById('excludedPreference').value = saved?.excludedPreference || '';
+const host = document.getElementById('questions');
+JimoPreferences.questions.forEach(([title, choices], i) => {
+    const group = document.createElement('fieldset');
+    const legend = document.createElement('legend'); legend.textContent = `${i + 1}. ${title}`; group.append(legend);
+    [...choices, '自定义', '不确定 / 跳过'].forEach(choice => {
+        const label = document.createElement('label'), input = document.createElement('input');
+        input.type = 'radio'; input.name = 'q' + i; input.value = choice; input.checked = answers[i] === choice;
+        label.append(input, document.createTextNode(choice)); group.append(label);
+    });
+    const custom = document.createElement('textarea');
+    custom.id = 'customQ' + i; custom.rows = 2; custom.maxLength = 200;
+    custom.placeholder = '写下你自己的期待'; custom.setAttribute('aria-label', title + '：自定义');
+    custom.value = saved?.customAnswers?.[i] || ''; custom.hidden = answers[i] !== '自定义';
+    group.append(custom); host.append(group);
+});
+const summary = document.getElementById('profileSummary');
+const selfHost = document.getElementById('selfQuestions');
+JimoPreferences.selfQuestions.forEach(([title, choices], i) => {
+    const group = document.createElement('fieldset'), legend = document.createElement('legend');
+    legend.textContent = `${i + 1}. ${title}`; group.append(legend);
+    [...choices, '自定义', '不确定 / 跳过'].forEach(choice => {
+        const label = document.createElement('label'), input = document.createElement('input');
+        input.type = 'radio'; input.name = 'selfQ' + i; input.value = choice; input.checked = saved?.selfAnswers?.[i] === choice;
+        label.append(input, document.createTextNode(choice)); group.append(label);
+    });
+    const custom = document.createElement('textarea');
+    custom.id = 'selfCustom' + i; custom.rows = 2; custom.maxLength = 200; custom.placeholder = '写下你自己的反应';
+    custom.setAttribute('aria-label', title + '：自定义'); custom.value = saved?.selfCustomAnswers?.[i] || '';
+    custom.hidden = saved?.selfAnswers?.[i] !== '自定义'; group.append(custom); selfHost.append(group);
+});
+const selfSummary = document.getElementById('selfSummary');
+selfSummary.value = saved?.selfSummary || '';
+let changedSelfSummary = false;
+selfSummary.addEventListener('input', () => { changedSelfSummary = true; });
+function selfAnswers() { return JimoPreferences.selfQuestions.map((_, i) => document.querySelector(`input[name="selfQ${i}"]:checked`)?.value || ''); }
+function selfCustomAnswers() { return JimoPreferences.selfQuestions.map((_, i) => document.getElementById('selfCustom' + i).value.trim()); }
+function updateSelfSummary() {
+    const selected = selfAnswers();
+    selected.forEach((value, i) => { document.getElementById('selfCustom' + i).hidden = value !== '自定义'; });
+    if (!changedSelfSummary) selfSummary.value = JimoPreferences.selfSummary(selected, selfCustomAnswers());
+}
+selfHost.addEventListener('change', updateSelfSummary);
+selfHost.addEventListener('input', updateSelfSummary);
+summary.value = saved?.summary || '';
+document.getElementById('profileEnabled').checked = saved?.enabled ?? true;
+const status = document.getElementById('profileStatus');
+let changedSummary = false;
+summary.addEventListener('input', () => { changedSummary = true; });
+function currentAnswers() { return JimoPreferences.questions.map((_, i) => document.querySelector(`input[name="q${i}"]:checked`)?.value || ''); }
+function customAnswers() { return JimoPreferences.questions.map((_, i) => document.getElementById('customQ' + i).value.trim()); }
+function updateSummary() {
+    const selected = currentAnswers();
+    selected.forEach((value, i) => { document.getElementById('customQ' + i).hidden = value !== '自定义'; });
+    if (!changedSummary) summary.value = JimoPreferences.summary(selected, customAnswers());
+    else status.textContent = '答案已更新；你编辑过的摘要保留，请检查后保存。';
+}
+host.addEventListener('change', updateSummary);
+host.addEventListener('input', updateSummary);
+document.getElementById('profileForm').onsubmit = event => {
+    event.preventDefault();
+    status.textContent = JimoPreferences.save({ ...(JimoPreferences.load() || {}), playerName: document.getElementById('playerName').value, playerGender: document.getElementById('playerGender').value, answers: currentAnswers(), customAnswers: customAnswers(),
+        tags: [...tagHost.querySelectorAll('input[name=genreTag]:checked')].map(input => input.value),
+        excludedTags: [...tagHost.querySelectorAll('input[name=excludedGenreTag]:checked')].map(input => input.value),
+        excludedPreference: document.getElementById('excludedPreference').value.trim(),
+        storyEnabled: !!(tagHost.querySelector('input:checked') || document.getElementById('excludedPreference').value.trim() || JimoPreferences.load()?.generalPreference),
+        selfAnswers: selfAnswers(), selfCustomAnswers: selfCustomAnswers(), selfSummary: selfSummary.value.trim(),
+        summary: summary.value.trim(), enabled: document.getElementById('profileEnabled').checked }) ? '已保存到本机；返回即可开始故事。已有故事需主动应用才会改变偏好。' : '未能保存到本机，请重试。';
+};
+document.getElementById('clearProfile').onclick = () => {
+    try {
+        localStorage.removeItem(JimoPreferences.key);
+        localStorage.removeItem('reader_story_draft_v1');
+        document.getElementById('profileForm').reset(); summary.value = ''; changedSummary = false;
+        document.getElementById('excludedPreference').value = '';
+        tagHost.querySelectorAll('input').forEach(input => { input.checked = false; });
+        switchGenreMode('wantedGenreTab'); updateGenreCounts();
+        document.getElementById('playerName').value = '';
+        document.getElementById('playerGender').value = '';
+        host.querySelectorAll('input').forEach(input => { input.checked = false; });
+        selfHost.querySelectorAll('input').forEach(input => { input.checked = false; });
+        selfHost.querySelectorAll('textarea').forEach(input => { input.value = ''; input.hidden = true; });
+        selfSummary.value = ''; changedSelfSummary = false;
+        host.querySelectorAll('textarea').forEach(input => { input.value = ''; input.hidden = true; });
+        status.textContent = '偏好已清除，作品保留。';
+    }
+    catch { status.textContent = '未能清除，请重试。'; }
+};
+if (new URLSearchParams(location.search).get('from') === 'story') document.getElementById('profileReturn').href = 'story.html';
+</script>
+</body></html>

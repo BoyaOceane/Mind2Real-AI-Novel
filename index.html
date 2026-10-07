@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>即文 · Mind2Real — AI小说生成器与同人创作工具</title>
+  <meta name="description" content="即文（Mind2Real）是AI小说生成器与同人创作工具。描述想看的剧情，生成专属爽文，沉浸追读并改变走向；同人生成要求遵守原著设定与人设。">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300..900&family=Noto+Sans+SC:wght@300..700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* 宣纸底色系 */
+      --paper-new: oklch(98% 0.006 95);
+      --paper-aged: oklch(96% 0.010 92);
+      --paper-dark: oklch(92% 0.014 88);
+      /* 墨分五色 */
+      --ink-light: oklch(65% 0.018 85);
+      --ink-mid: oklch(40% 0.024 80);
+      --ink-heavy: oklch(20% 0.030 70);
+      --ink-black: oklch(15% 0.032 60);
+      /* 朱砂唯一点缀 */
+      --seal: oklch(48% 0.16 28);
+      --seal-dark: oklch(38% 0.18 22);
+      /* 边框 */
+      --border: oklch(82% 0.008 90);
+      --border-dark: oklch(60% 0.012 82);
+
+      --font-display: 'Noto Serif SC', 'Source Han Serif SC', 'SimSun', serif;
+      --font-body: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+
+      --space-xs: 8px;
+      --space-sm: 16px;
+      --space-md: 24px;
+      --space-lg: 48px;
+      --space-xl: 80px;
+
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-full: 9999px;
+      --transition-fast: 0.15s ease;
+      --transition-normal: 0.3s ease;
+      --shadow-soft: 0 2px 12px oklch(20% 0.030 70 / 0.07), 0 4px 20px oklch(20% 0.030 70 / 0.05);
+      --shadow-medium: 0 4px 16px oklch(20% 0.030 70 / 0.10), 0 8px 30px oklch(20% 0.030 70 / 0.08);
+      --shadow-strong: 0 8px 24px oklch(20% 0.030 70 / 0.14), 0 14px 40px oklch(20% 0.030 70 / 0.10);
+      --topbar-bg: #2c2825;
+      --topbar-text: #e8e2d8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      background: var(--paper-new);
+      color: var(--ink-light);
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== TOP BAR ===== */
+    .top-bar {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: var(--topbar-bg);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 100;
+    }
+    .top-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--topbar-text);
+      letter-spacing: 0.05em;
+    }
+    .top-right {
+      display: flex;
+      gap: 10px;
+    }
+    .top-btn {
+      padding: 8px 16px;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      transition: all var(--transition-normal);
+      background: rgba(255,255,255,0.10);
+      color: var(--topbar-text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .top-btn:hover {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+      border-color: rgba(255,255,255,0.38);
+    }
+    .top-btn:active { transform: scale(0.95); }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 20px 40px;
+      max-width: 660px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ===== TAB BAR ===== */
+    /* ===== TAB BOTTOM NAV ===== */
+    .tab-nav-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-md);
+      padding-top: var(--space-sm);
+      border-top: 1px solid var(--border);
+    }
+    .btn-nav {
+      padding: 8px 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      background: var(--paper-new);
+      color: var(--ink-mid);
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .btn-nav:hover {
+      border-color: var(--seal);
+      color: var(--seal);
+    }
+    .btn-nav:active { transform: scale(0.96); }
+    .btn:disabled, .btn-nav:disabled, .btn-random:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ===== WIZARD ===== */
+    .wizard-steps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 4px 0 var(--space-md);
+      border-bottom: 1px solid var(--border);
+    }
+    .wizard-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 0.88rem;
+      color: var(--ink-light);
+      transition: color var(--transition-fast);
+    }
+    .ws-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid var(--border-dark);
+      background: var(--paper-new);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: all var(--transition-fast);
+    }
+    .wizard-step.active {
+      color: var(--seal);
+      font-weight: 600;
+    }
+    .wizard-step.active .ws-num {
+      border-color: var(--seal);
+      color: var(--seal);
+    }
+    .wizard-step.done { color: var(--ink-mid); }
+    .wizard-step.done .ws-num {
+      background: var(--ink-heavy);
+      border-color: var(--ink-heavy);
+      color: var(--paper-new);
+    }
+    .ws-line {
+      width: 56px;
+      height: 1px;
+      background: var(--border);
+      margin: 0 14px;
+    }
+    .wizard-panel {
+      display: none;
+      width: 100%;
+    }
+    .wizard-panel.active {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+      padding-top: var(--space-md);
+      animation: panelIn 0.35s ease;
+    }
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .path-cards {
+      display: flex;
+      gap: var(--space-md);
+      width: 100%;
+    }
+    .path-card {
+      flex: 1;
+      padding: var(--space-lg) var(--space-md);
+      border: 1.5px solid var(--border-dark);
+      border-radius: var(--radius-lg);
+      background: var(--paper-new);
+      cursor: pointer;
+      text-align: center;
+      font-family: inherit;
+      transition: all var(--transition-normal);
+    }
+    .path-card:hover {
+      border-color: var(--seal);
+      background: oklch(48% 0.16 28 / 0.06);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-soft);
+    }
+    .path-card:active { transform: translateY(0); }
+    .path-card-glyph {
+      font-family: var(--font-display);
+      font-size: 1.9rem;
+      color: var(--ink-light);
+      margin-bottom: 10px;
+      transition: color var(--transition-normal);
+    }
+    .path-card:hover .path-card-glyph { color: var(--seal); }
+    .path-card-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      color: var(--ink-heavy);
+      margin-bottom: 6px;
+    }
+    .path-card-desc {
+      font-size: 0.82rem;
+      color: var(--ink-mid);
+      line-height: 1.5;
+    }
+
+    .tab-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tab-section.center { align-items: center; }
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--ink-mid);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .section-label::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: var(--seal);
+      flex-shrink: 0;
+    }
+
+    .generated-info {
+      margin-top: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--paper-aged);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--seal);
+      border-radius: var(--radius-md);
+      min-height: 48px;
+    }
+    .generated-info:empty::before {
+      content: '点击「换一批」随机生成';
+      font-size: 0.82rem;
+      color: var(--ink-light);
+    }
+    .generated-name {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--ink-heavy);
+      margin-bottom: 4px;
+    }
+    .generated-desc {
+      font-size: 0.88rem;
+      color: var(--ink-mid);
+      line-height: 1.5;
+    }
+    .generated-info.streaming::after {
+      content: '█';
+      animation: blink 0.6s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.88rem;
+      transition: all var(--transition-normal);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-custom {
+      background: transparent;
+      color: var(--ink-mid);
+      border: 1.5px solid var(--border-dark);
+    }
+    .btn-custom:hover {
+      border-color: var(--ink-heavy);
+      color: var(--ink-heavy);
+    }
+    .btn-random {
+      background: transparent;
+      color: var(--seal);
+      border: 1.5px dashed var(--seal);
+      border-radius: var(--radius-full);
+      padding: 10px 20px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.88rem;
+      align-self: flex-start;
+      transition: all var(--transition-fast);
+    }
+    .btn-random:hover {
+      background: oklch(48% 0.16 28 / 0.10);
+    }
+    .btn-random:active { transform: scale(0.96); }
+    .btn-start {
+      padding: 14px 48px;
+      font-size: 1rem;
+      background: var(--ink-heavy);
+      color: var(--paper-new);
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      box-shadow: 0 4px 18px oklch(20% 0.030 70 / 0.38);
+      transition: all var(--transition-normal);
+    }
+    .btn-start:hover {
+      background: var(--ink-black);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px oklch(20% 0.030 70 / 0.45);
+    }
+    .btn-start:active { transform: translateY(0) scale(0.97); }
+
+    /* ===== TAG OPTIONS (叙事手法单选) ===== */
+    .tag-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag-option {
+      padding: 6px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      background: var(--paper-new);
+      color: var(--ink-mid);
+    }
+    .tag-option:hover {
+      border-color: var(--seal);
+      color: var(--seal-dark);
+    }
+    .tag-option.selected {
+      background: oklch(48% 0.16 28 / 0.10);
+      border-color: var(--seal);
+      color: var(--seal-dark);
+      font-weight: 600;
+    }
+    .tag-option:active { transform: scale(0.96); }
+
+    /* ===== API PANEL ===== */
+    .api-panel-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: oklch(20% 0.030 70 / 0.55);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .api-panel-overlay.open { display: flex; }
+    .api-panel {
+      background: var(--paper-new);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-strong);
+    }
+    .api-panel-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      margin-bottom: var(--space-md);
+      color: var(--ink-heavy);
+    }
+    .api-input-wrap {
+      position: relative;
+    }
+    .api-input {
+      width: 100%;
+      padding: 12px 44px 12px 14px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--paper-new);
+      color: var(--ink-heavy);
+      transition: all var(--transition-fast);
+    }
+    .api-input:focus {
+      outline: none;
+      border-color: var(--seal);
+      box-shadow: 0 0 0 3px oklch(48% 0.16 28 / 0.15);
+    }
+    .api-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--ink-mid);
+      font-size: 0.85rem;
+      padding: 4px;
+    }
+    .api-toggle:hover { color: var(--ink-heavy); }
+    .api-save-btn {
+      width: 100%;
+      margin-top: var(--space-md);
+      padding: 12px;
+      background: var(--ink-heavy);
+      color: var(--paper-new);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all var(--transition-fast);
+    }
+    .api-save-btn:hover { background: var(--ink-black); }
+    .api-test-btn {
+      width: 100%;
+      margin-top: var(--space-sm);
+      padding: 10px;
+      background: transparent;
+      color: var(--ink-mid);
+      border: 1.5px solid var(--border-dark);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: all var(--transition-fast);
+    }
+    .api-test-btn:hover { border-color: var(--seal); color: var(--seal-dark); }
+    .api-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .api-test-btn.testing { color: var(--seal); }
+
+    /* ===== HISTORY PANEL ===== */
+    .history-panel-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: oklch(20% 0.030 70 / 0.55);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .history-panel-overlay.open { display: flex; }
+    .history-panel {
+      background: var(--paper-new);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 560px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-strong);
+      overflow: hidden;
+    }
+    .history-panel-header {
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .history-panel-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      color: var(--ink-heavy);
+    }
+    .history-panel-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: var(--paper-aged);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--ink-mid);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    .history-panel-close:hover { background: var(--paper-dark); }
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-sm);
+    }
+    .history-empty {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--ink-mid);
+      font-size: 0.88rem;
+    }
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      border: 1px solid transparent;
+    }
+    .history-item:hover {
+      background: var(--paper-aged);
+      border-color: var(--border);
+    }
+    .history-item-left { flex: 1; min-width: 0; }
+    .history-item-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink-heavy);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-item-meta {
+      font-size: 0.75rem;
+      color: var(--ink-mid);
+    }
+    .history-item-delete {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--ink-mid);
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all var(--transition-fast);
+    }
+    .history-item-delete:hover {
+      background: oklch(48% 0.16 28 / 0.12);
+      color: var(--seal-dark);
+    }
+    .history-filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .history-filter-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      background: var(--paper-new);
+      color: var(--ink-mid);
+      font-size: 0.82rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+    }
+    .history-filter-btn:hover {
+      border-color: var(--seal);
+      color: var(--seal-dark);
+    }
+    .history-filter-btn.active {
+      background: oklch(48% 0.16 28 / 0.12);
+      border-color: var(--seal);
+      color: var(--seal-dark);
+      font-weight: 600;
+    }
+    .history-panel-footer {
+      padding: var(--space-md) var(--space-lg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-sm);
+      flex-shrink: 0;
+    }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 100px;
+      transform: translate(-50%, 16px);
+      padding: 10px 20px;
+      background: oklch(20% 0.030 70 / 0.92);
+      color: #fff;
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-strong);
+      font-size: 0.88rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition-normal), transform var(--transition-normal);
+      z-index: 300;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--ink-mid); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .main { padding: 24px 16px 120px; }
+      .card { padding: var(--space-md); }
+      .history-panel { max-height: 90vh; }
+      .path-cards { flex-direction: column; }
+    }
+  </style>
+<link rel="stylesheet" href="reader.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-title">即文</div>
+  <div class="top-right">
+    <a class="top-btn" href="profile.html">阅读偏好</a>
+    <button class="top-btn" onclick="openHistory()">历史记录</button>
+    <button class="top-btn" onclick="openApi()">API设置</button>
+
+  </div>
+</div>
+
+<!-- READER HOME -->
+<div class="reader-home">
+  <section class="home-preview" aria-label="你的小说简介">
+  <button id="resumeStory" class="reader-secondary" onclick="continueLastReading()" hidden>继续上次阅读</button>
+  <p class="reader-eyebrow">所想，即成文。</p>
+  <h1 id="openingBookTitle">正在准备你的小说名…</h1>
+  <div id="openingHook" class="opening-hook" aria-label="剧情简介"><p class="opening-punchline">正在准备你的故事简介…</p></div>
+  <details><summary>看看世界与身份背景</summary><h2 id="openingTitle">你的下一个世界</h2><p id="openingTags" class="reader-tags"></p><p id="openingDetails"></p></details>
+  <p id="openingStatus" class="reader-note" role="status"></p>
+  <div id="setupHint" hidden><button class="reader-secondary" onclick="openApi()">设置 API Key，准备背景</button></div>
+  <div class="reader-actions"><button id="enterWorld" class="reader-primary" onclick="startCreating()">进入这个世界</button><button class="reader-secondary" onclick="rollWorld()">换一批</button></div>
+  <p id="preferenceHint" class="reader-note"></p>
+  <details><summary>自定义开局与创作设置</summary><p class="reader-note">从书架载入已有世界，或设置写作风格。无需先完成这些设置。</p><button class="reader-secondary" onclick="openHistory()">载入已有世界</button> <button class="reader-secondary" onclick="openPref()">写作风格</button> <a href="admin.html">提示词与角色塑造</a></details>
+  </section>
+  <aside class="home-idea" aria-labelledby="storyIdeaTitle">
+    <h2 id="storyIdeaTitle">这次想看什么？</h2>
+    <p class="reader-note">写下你想体验的故事，AI帮你把想法展开成专属小说。人物与剧情接得上，你随时可以决定下一步。</p>
+    <p class="reader-note">剧情想法会覆盖阅读偏好，包括想看、不想看和测评结果；不会修改已保存的偏好。清空后立即停用旧想法，后续按阅读偏好生成。</p>
+    <form id="storyIdeaForm">
+      <label for="generalPreference">这次的剧情想法（可选）</label>
+      <textarea id="generalPreference" rows="4" maxlength="1200" placeholder="例如：星际维修工靠修好废弃机甲翻身，军方争着请我出山。轻松嘴贫，爽得干脆。"></textarea>
+      <p id="storyIdeaStatus" class="reader-note" role="status">修改想法后，点“生成简介”更新左侧故事。</p>
+      <div class="reader-actions"><button id="generateStoryIdea" class="reader-primary" type="submit">生成简介</button><button id="clearStoryIdea" class="reader-secondary" type="button">清空想法</button></div>
+    </form>
+    <a class="reader-note" href="profile.html">调整阅读偏好：题材、避雷与代入设定 →</a>
+  </aside>
+</div>
+
+<!-- API SETTINGS PANEL -->
+<div class="api-panel-overlay" id="apiPanelOverlay">
+  <div class="api-panel">
+    <div class="api-panel-title">DeepSeek API 设置</div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:0.78rem;color:var(--text-secondary);">模型版本</label>
+      <select id="apiModelSelect" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--paper-new);color:var(--ink-heavy);font-family:inherit;font-size:0.88rem;">
+        <option value="deepseek-flash">deepseek-flash（快速生成）★ 推荐</option>
+        <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+      </select>
+    </div>
+    <div class="api-input-wrap">
+      <input type="password" class="api-input" id="apiKeyInput" placeholder="请输入 DeepSeek API Key">
+      <button class="api-toggle" onclick="toggleApiKey()">显示</button>
+    </div>
+    <button class="api-save-btn" onclick="saveApiKey()">保存</button>
+    <button class="api-test-btn" id="apiTestBtn" onclick="testApiKey()">测试连接</button>
+    <button class="api-test-btn" id="apiTestGenerateBtn" onclick="testApiGenerate()">测试生成</button>
+  </div>
+</div>
+
+<!-- PREFERENCE PANEL -->
+<div class="api-panel-overlay" id="prefPanelOverlay">
+  <div class="api-panel">
+    <div class="api-panel-title">用户偏好（全局写作风格）</div>
+    <textarea id="prefInput" rows="5" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--paper-new);color:var(--ink-heavy);font-family:inherit;font-size:0.9rem;resize:vertical;" placeholder="例如：我喜欢黑暗残酷的世界观，主角性格复杂有缺陷，叙事节奏快，不要言情线..."></textarea>
+    <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">AI 将提取偏好的本质转化为写作约束，注入所有生成环节</p>
+    <button class="api-save-btn" onclick="savePref()">保存</button>
+  </div>
+</div>
+
+<!-- HISTORY PANEL -->
+<div class="history-panel-overlay" id="historyPanelOverlay">
+  <div class="history-panel">
+    <div class="history-panel-header">
+      <div class="history-panel-title">历史记录</div>
+      <button class="history-panel-close" onclick="closeHistory()">&#x2715;</button>
+    </div>
+    <div class="history-filter-bar" id="historyFilterBar">
+      <button class="history-filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">全部</button>
+      <button class="history-filter-btn" data-filter="world" onclick="setHistoryFilter('world')">世界观</button>
+      <button class="history-filter-btn" data-filter="protagonist" onclick="setHistoryFilter('protagonist')">主角</button>
+      <button class="history-filter-btn" data-filter="story" onclick="setHistoryFilter('story')">故事</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+    <div class="history-panel-footer">
+      <button class="btn btn-custom" onclick="exportAllHistory()">导出历史</button>
+      <button class="btn btn-custom" onclick="document.getElementById('historyImportInput').click()">导入历史</button>
+      <input type="file" id="historyImportInput" accept="application/json" style="display:none" onchange="onHistoryImport(this)">
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="scripts/stream.js"></script>
+<script src="scripts/fiction.js"></script>
+<script src="scripts/reader-preferences.js"></script>
+<script>
+// ==================== ARCHIVE UTILITIES ====================
+const ARCHIVE_KEYS = {
+  worlds: 'jimo_worlds',
+  protagonists: 'jimo_protagonists'
+};
+
+function loadArchive(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error(`Failed to load archive ${key}:`, e);
+    return [];
+  }
+}
+
+function saveArchive(key, list) {
+  try {
+    const previous = localStorage.getItem(key);
+    if (previous && !Array.isArray(JSON.parse(previous))) throw new Error('原归档格式损坏');
+    localStorage.setItem(key, JSON.stringify(list));
+    return true;
+  } catch (e) {
+    console.error(`Failed to save archive ${key}:`, e);
+    showToast('保存失败，可能本地存储已满');
+    return false;
+  }
+}
+
+function nextArchiveId(prefix, list) {
+  const max = list.reduce((m, item) => {
+    const num = parseInt(item.id?.slice(1), 10) || 0;
+    return Math.max(m, num);
+  }, 0);
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
+}
+
+function addWorldRecord(item) {
+  const list = loadArchive(ARCHIVE_KEYS.worlds);
+  const record = {
+    id: nextArchiveId('W', list),
+    createdAt: Date.now(),
+    tags: item.tags || [],
+    title: item.title || '未命名世界',
+    content: item.content || '',
+    prompt: item.prompt || '',
+    storyTitle: item.storyTitle || '', synopsis: item.synopsis || '', storyPromise: item.storyPromise || '', playerBackground: item.playerBackground || '', openingConflict: item.openingConflict || '', characterTags: item.characterTags || {}
+  };
+  list.unshift(record);
+  return { ...record, saved: saveArchive(ARCHIVE_KEYS.worlds, list) };
+}
+
+function historyExportPayload() {
+  const payload = {
+    version: 3,
+    exportedAt: Date.now(),
+    worlds: JSON.parse(localStorage.getItem(ARCHIVE_KEYS.worlds) || '[]'),
+    protagonists: JSON.parse(localStorage.getItem(ARCHIVE_KEYS.protagonists) || '[]'),
+    stories: JSON.parse(localStorage.getItem('story_history') || '[]')
+  };
+  return payload;
+}
+function exportAllHistory() {
+  let payload;
+  try { payload = historyExportPayload(); }
+  catch { showToast('原归档数据无法读取，已保留，请先检查备份'); return; }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const ts = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `jimo-history-${ts}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importAllHistory(file) {
+  try { await mergeHistoryFile(file); }
+  catch { showToast('导入未完成，本地存储不可用或归档格式损坏；原数据已保留'); }
+}
+async function mergeHistoryFile(file) {
+  const text = await file.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch (e) {
+    showToast('文件格式错误，无法解析');
+    return;
+  }
+  if (!payload || ![1, 2, 3].includes(payload.version)) {
+    showToast('不兼容的历史记录版本');
+    return;
+  }
+
+  if (payload.stories && (!Array.isArray(payload.stories) || payload.stories.some(s => !s || typeof s !== 'object' || (s.history && (!Array.isArray(s.history) || s.history.some(h => typeof h.content !== 'string')))))) { showToast('故事数据格式错误'); return; }
+  const merge = (key, incoming) => {
+    if (!Array.isArray(incoming)) return;
+    const existing = loadArchive(key);
+    const existingIds = new Set(existing.map(i => i.id));
+    let added = 0;
+    for (const item of incoming) {
+      if (item.id && !existingIds.has(item.id)) {
+        existing.push(item);
+        existingIds.add(item.id);
+        added++;
+      }
+    }
+    if (!saveArchive(key, existing)) throw new Error('归档保存失败');
+    return added;
+  };
+
+  const worldsAdded = merge(ARCHIVE_KEYS.worlds, payload.worlds);
+  const protsAdded = merge(ARCHIVE_KEYS.protagonists, payload.protagonists);
+
+  // Merge stories into story_history
+  let storiesAdded = 0;
+  if (Array.isArray(payload.stories)) {
+    const existing = JSON.parse(localStorage.getItem('story_history') || '[]');
+    const existingIds = new Set(existing.map(i => i._autoId || i.id));
+    for (const item of payload.stories) {
+      const key = item._autoId || item.id;
+      if (key && !existingIds.has(key)) {
+        existing.push(item);
+        existingIds.add(key);
+        storiesAdded++;
+      }
+    }
+    localStorage.setItem('story_history', JSON.stringify(existing));
+  }
+
+  showToast(`导入完成：世界观 +${worldsAdded || 0}，主角 +${protsAdded || 0}，故事 +${storiesAdded || 0}`);
+}
+
+// ==================== TAG DATA ====================
+const worldDims = {
+  '物理规律': ['现实世界','规则世界','星际世界','平行世界','微观世界','数据世界','梦境世界'],
+  '时代位置': ['古代世界','近代世界','现代世界','近未来世界','远未来世界','末日世界','后末日世界'],
+  '技术路线': ['蒸汽朋克','赛博朋克','柴油朋克','原子朋克','生物朋克','丝绸朋克','石器朋克'],
+  '超自然力量': ['无魔世界','低魔世界','高魔世界','神话世界','克苏鲁世界','灵异世界'],
+  '文明形态': ['部落世界','城邦世界','帝国世界','封建世界','资本世界','共产世界','无政府世界','蜂巢世界'],
+  '存在状态': ['物质世界','精神世界','模拟世界','书中世界','死后世界','转生世界'],
+  '异化方向': ['废土世界','异星世界','深海世界','地下世界','浮空世界','巨构世界']
+};
+
+const protagonistChineseDims = {
+  '气质底色': ['天生领头者','柔韧适应者','热情感染型','外冷内热型','稳重可靠型','细腻滋养型','杀伐果断型','精致挑剔型','自由奔放型','神秘直觉型'],
+  '能量状态': ['主动进攻型','以守为攻型','极端偏执型'],
+  '处事风格': ['规矩守成型','野心攻击型','温和包容型','孤僻奇才型','踏实积累型','洒脱挥霍型','随遇而安型','毒舌叛逆型','独立自尊型','冲动义气型'],
+  '人格面具': ['天生领袖范','机灵多变型','热心操劳型','刚毅果断型','乐天知足型','亦正亦邪型','稳重守成型','温柔策划型','贪多求全型','直言惹祸型','公正调和型','爱管闲事型','敢爱敢恨型','破旧立新型'],
+  '内在驱动': ['自我实现驱动','财富积累驱动','事业成就驱动','情感关系驱动','自由漂泊驱动'],
+  '人生轨迹': ['稳扎稳打上升型','先苦后甜奋斗型','是非缠身体质','怀才不遇苦闷型','左手进右手出型'],
+  '命运课题': ['天生好命型','强势掌控型','贵人相助型','执念深重型']
+};
+
+const protagonistWesternDims = {
+  '性格内核': ['高神经质','低神经质','高宜人性','低宜人性','高尽责性','低尽责性','高外向性','低外向性','高开放性','低开放性','自恋型','马基雅维利型','精神病态型','完美主义','冲动型','回避型','偏执型'],
+  '内在驱动': ['成就驱动','权力驱动','亲和驱动','认知驱动','生存驱动'],
+  '关系模式': ['安全型','焦虑型','回避型依恋','紊乱型'],
+  '心理防线': ['升华型','幽默型','利他型','合理化','置换型','投射型','否认型','退行型'],
+  '创伤印记': ['童年忽视','背叛创伤','幸存者愧疚','代际创伤','创伤后成长'],
+  '自我认知': ['高自尊','低自尊','内控型','外控型','自我清晰','自我混乱']
+};
+
+// ==================== API PANEL ====================
+function openApi() {
+  const panel = document.getElementById('apiPanelOverlay');
+  const input = document.getElementById('apiKeyInput');
+  input.value = localStorage.getItem('deepseek_api_key') || '';
+  input.type = 'password';
+  document.getElementById('apiModelSelect').value = getApiConfig().model;
+  panel.classList.add('open');
+}
+
+function closeApi() {
+  document.getElementById('apiPanelOverlay').classList.remove('open');
+}
+
+// ==================== USER PREFERENCE ====================
+function openPref() {
+  document.getElementById('prefInput').value = localStorage.getItem('user_preference') || '';
+  document.getElementById('prefPanelOverlay').classList.add('open');
+}
+function savePref() {
+  const v = document.getElementById('prefInput').value.trim();
+  localStorage.setItem('user_preference', v);
+  document.getElementById('prefPanelOverlay').classList.remove('open');
+  showToast(v ? '偏好已保存' : '偏好已清空');
+}
+function getPrefPrompt() {
+  const raw = localStorage.getItem('user_preference') || '';
+  if (!raw.trim()) return '';
+  return `【用户深层偏好 — 已转化为写作约束】
+${raw}
+
+请将以上偏好的本质提炼为本次创作的基调约束：风格倾向、节奏偏好、禁忌事项。不是照搬原文，而是理解其底层审美后融入写作。`;
+}
+// Close pref panel on overlay click
+document.getElementById('prefPanelOverlay').addEventListener('click', function(e) {
+  if (e.target === this) document.getElementById('prefPanelOverlay').classList.remove('open');
+});
+
+function toggleApiKey() {
+  const input = document.getElementById('apiKeyInput');
+  const btn = document.querySelector('.api-toggle');
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '隐藏';
+  } else {
+    input.type = 'password';
+    btn.textContent = '显示';
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) {
+    showToast('请输入有效的 API Key');
+    return;
+  }
+  localStorage.setItem('deepseek_api_key', key);
+  localStorage.setItem('deepseek_model', document.getElementById('apiModelSelect').value);
+  showToast('API Key 和模型已保存');
+  const resume = pendingSetupAction;
+  pendingSetupAction = null;
+  if (resume) setTimeout(resume, 0);
+  closeApi();
+}
+
+async function testApiKey() {
+  const btn = document.getElementById('apiTestBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('testing');
+  btn.textContent = '测试中...';
+
+  const apiKey = localStorage.getItem('deepseek_api_key') || document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) {
+    showToast('请先输入 API Key');
+    btn.disabled = false;
+    btn.classList.remove('testing');
+    btn.textContent = '测试连接';
+    return;
+  }
+
+  try {
+    // Use non-streaming request for reliable testing
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-flash',
+        messages: [
+          { role: 'user', content: 'hi' }
+        ],
+        max_tokens: 10,
+        stream: false
+      })
+    });
+
+    if (response.ok) {
+      showToast('API 连接成功');
+    } else {
+      const err = await response.json().catch(() => ({}));
+      showToast(`API 错误: ${err.error?.message || response.status}`);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('API 连接失败，请检查网络');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('testing');
+    btn.textContent = '测试连接';
+  }
+}
+
+async function testApiGenerate() {
+  const btn = document.getElementById('apiTestGenerateBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.classList.add('testing');
+  btn.textContent = '测试中...';
+
+  const apiKey = localStorage.getItem('deepseek_api_key') || document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) {
+    showToast('请先输入 API Key');
+    btn.disabled = false;
+    btn.classList.remove('testing');
+    btn.textContent = '测试生成';
+    return;
+  }
+
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-flash',
+        messages: [
+          { role: 'user', content: '说一句"测试成功"' }
+        ],
+        max_tokens: 50,
+        stream: false
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content || '';
+      if (text) {
+        showToast(`生成成功: ${text.slice(0, 20)}`);
+      } else {
+        showToast('生成返回为空');
+      }
+    } else {
+      const err = await response.json().catch(() => ({}));
+      showToast(`API 错误: ${err.error?.message || response.status}`);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('请求失败，请检查网络');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('testing');
+    btn.textContent = '测试生成';
+  }
+}
+
+// Click outside to close
+document.getElementById('apiPanelOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeApi();
+});
+
+// ==================== HISTORY PANEL ====================
+let currentHistoryFilter = 'all';
+
+function setHistoryFilter(filter) {
+  currentHistoryFilter = filter;
+  document.querySelectorAll('.history-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderHistoryList();
+}
+
+function onHistoryImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  importAllHistory(file).then(() => {
+    renderHistoryList();
+    input.value = '';
+  });
+}
+
+function openHistory() {
+  const panel = document.getElementById('historyPanelOverlay');
+  renderHistoryList();
+  panel.classList.add('open');
+}
+
+function closeHistory() {
+  document.getElementById('historyPanelOverlay').classList.remove('open');
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('historyList');
+  let items = [];
+
+  if (currentHistoryFilter === 'all' || currentHistoryFilter === 'world') {
+    loadArchive(ARCHIVE_KEYS.worlds).forEach(item => {
+      items.push({ type: 'world', ...item });
+    });
+  }
+  if (currentHistoryFilter === 'all' || currentHistoryFilter === 'protagonist') {
+    loadArchive(ARCHIVE_KEYS.protagonists).forEach(item => {
+      items.push({ type: 'protagonist', ...item });
+    });
+  }
+  if (currentHistoryFilter === 'all' || currentHistoryFilter === 'story') {
+    let stories;
+    try {
+      stories = JSON.parse(localStorage.getItem('story_history') || '[]');
+    } catch (e) { stories = []; }
+    stories.forEach(item => {
+      items.push({ type: 'story', ...item, title: item.title || '无标题故事' });
+    });
+  }
+
+  items.sort((a, b) => {
+    const ta = a.createdAt || a.date || 0;
+    const tb = b.createdAt || b.date || 0;
+    return new Date(tb).getTime() - new Date(ta).getTime();
+  });
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="history-empty">暂无历史记录</div>';
+    return;
+  }
+
+  list.innerHTML = items.map((item, idx) => {
+    const typeLabels = { world: '世界观', protagonist: '主角', story: '故事' };
+    const typeLabel = typeLabels[item.type] || item.type;
+    const dateStr = item.createdAt
+      ? new Date(item.createdAt).toLocaleString('zh-CN')
+      : (item.date || '');
+    let relation = '';
+    if (item.type === 'protagonist' && item.worldId) {
+      relation = ` · 关联 ${item.worldId}`;
+    }
+    if (item.type === 'story') {
+      const parts = [];
+      if (item.worldId) parts.push(item.worldId);
+      if (item.protagonistId) parts.push(item.protagonistId);
+      if (parts.length) relation = ` · 关联 ${parts.join(' / ')}`;
+    }
+    const itemId = item.id || item._autoId || '';
+    return `
+      <div class="history-item" data-type="${item.type}" data-id="${itemId}" data-idx="${idx}" onclick="loadHistoryItem('${item.type}', '${itemId}', ${idx})">
+        <div class="history-item-left">
+          <div class="history-item-title">${escapeHTML(item.type === 'story' ? JimoFiction.bookTitle(item.title || '无标题') : item.title || '无标题')}</div>
+          <div class="history-item-meta">${typeLabel} · ${dateStr}${relation}</div>
+        </div>
+        <button class="history-item-delete" onclick="event.stopPropagation(); deleteHistoryItem('${item.type}', '${itemId}', ${idx})">&#x2715;</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadHistoryItem(type, itemId, idx) {
+  if (type === 'world') {
+    const record = loadArchive(ARCHIVE_KEYS.worlds).find(r => r.id === itemId);
+    if (record) useArchivedWorld(record);
+    return;
+  }
+  if (type === 'protagonist') { showToast('旧角色设定保留在书架；新体验中你就是主角。'); return; }
+
+  // Story: navigate to story.html
+  let stories;
+  try {
+    stories = JSON.parse(localStorage.getItem('story_history') || '[]');
+  } catch (e) { return; }
+  const item = stories.find(s => (s.id || s._autoId) === itemId) || stories[idx];
+  if (!item) return;
+
+  const session = {
+    ...item,
+    storyId: item.storyId || item._autoId || crypto.randomUUID(),
+    archiveId: item.id || null,
+    worldTitle: item.worldTitle || '未知世界',
+    worldTags: item.worldTags || [],
+    protagonist: item.protagonist || '未知主角',
+    protagonistTags: item.protagonistTags || [],
+    goldenFinger: item.goldenFinger || '',
+    narrative: item.narrative || '',
+    history: Array.isArray(item.history) ? item.history : item.content ? [{ content: item.content, options: [] }] : [],
+    storyOutline: item.storyOutline || [],
+    storyClues: item.storyClues || [],
+    characterCards: item.characterCards || [],
+    characterRelations: item.characterRelations || [],
+    createdAt: item.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    worldId: item.worldId || null,
+    protagonistId: item.protagonistId || null,
+    // 沉浸模式字段透传（旧记录无这些字段，story.html loadStoryData 会补齐默认值）
+    mode: item.mode,
+    profile: item.profile,
+    quizRound: item.quizRound,
+    quizAnswers: item.quizAnswers,
+    quizSkipped: item.quizSkipped,
+    convertedToNovel: item.convertedToNovel
+  };
+
+  try { localStorage.setItem('current_story_session', JSON.stringify(session)); }
+  catch { showToast('无法保存到本机，请先导出备份'); return; }
+  window.location.href = 'story.html';
+}
+
+function deleteHistoryItem(type, itemId, idx) {
+  if (type === 'world') {
+    const list = loadArchive(ARCHIVE_KEYS.worlds);
+    const pos = list.findIndex(r => r.id === itemId);
+    if (pos >= 0) list.splice(pos, 1);
+    saveArchive(ARCHIVE_KEYS.worlds, list);
+  } else if (type === 'protagonist') {
+    const list = loadArchive(ARCHIVE_KEYS.protagonists);
+    const pos = list.findIndex(r => r.id === itemId);
+    if (pos >= 0) list.splice(pos, 1);
+    saveArchive(ARCHIVE_KEYS.protagonists, list);
+  } else if (type === 'story') {
+    let stories;
+    try {
+      stories = JSON.parse(localStorage.getItem('story_history') || '[]');
+    } catch (e) { return; }
+    const pos = stories.findIndex(s => (s.id || s._autoId) === itemId);
+    if (pos >= 0) stories.splice(pos, 1);
+    else stories.splice(idx, 1); // fallback to idx
+    localStorage.setItem('story_history', JSON.stringify(stories));
+  }
+  renderHistoryList();
+  showToast('已删除');
+}
+
+// Click outside to close
+document.getElementById('historyPanelOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeHistory();
+});
+
+// ==================== API ====================
+function getApiConfig() {
+  let model = localStorage.getItem('deepseek_model') || 'deepseek-flash';
+  // Normalize model name
+  if (['flash', 'deepseek-v4-flash', 'deepseek-v4-flash-vision-exp', 'deepseek-chat', 'deepseek-reasoner'].includes(model)) model = 'deepseek-flash';
+  else if (model === 'pro') model = 'deepseek-v4-pro';
+  else if (!model.startsWith('deepseek-')) model = 'deepseek-flash';
+  return {
+    apiKey: localStorage.getItem('deepseek_api_key') || '',
+    model
+  };
+}
+
+async function callDeepSeek(prompt, systemPrompt, onChunk) {
+  const config = getApiConfig();
+  if (!config.apiKey) return null;
+
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey}`
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.6,
+        stream: true
+      })
+    });
+
+    if (!response.ok) {
+      let errMsg = `HTTP ${response.status}`;
+      try {
+        const errData = await response.json();
+        errMsg = errData.error?.message || errData.error?.type || errMsg;
+      } catch {}
+      throw new Error(errMsg);
+    }
+    const { content } = await JimoStream.read(response, onChunk);
+    return content;
+  } catch (error) {
+    console.error('DeepSeek API错误:', error);
+    throw error;
+  }
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+// ==================== ESCAPE HTML ====================
+function ensureCompleteSentence(text) {
+  if (!text) return text;
+  const lastPeriod = Math.max(text.lastIndexOf('。'), text.lastIndexOf('！'), text.lastIndexOf('？'));
+  if (lastPeriod > 0) return text.slice(0, lastPeriod + 1);
+  return text;
+}
+
+// ---- Anti-AI flavor helpers ----
+function getAntiAiPromptBlock() {
+  return `
+【去 AI 味约束 — 每次写作必须执行】
+- 禁止模板化转折词：然而、但是、不仅如此、从某种意义上说。
+- 禁止空泛填充词：某种、仿佛、一丝、眼中闪过。
+- 禁止情绪直述：不要写"他感到愤怒/悲伤/恐惧"，改为动作或处境。
+- 短句与长句交错，不要每句长度平均。`;
+}
+
+function cleanAiFlavor(text) {
+  if (!text) return text;
+  let s = text;
+  s = s.replace(/…{2,}/g, '……');
+  s = s.replace(/（——）/g, '——');
+  s = s.replace(/([""""'][^""""']+[""""'])[\s]*[，。]?\s*(?:他|她|它|那人|对方)\s*(?:说道|回答道|接着说|轻声道|冷声道|缓缓道)/g, '$1');
+  s = s.replace(/(?:他|她|它|那人|对方)\s*(?:说道|回答道|接着说|轻声道|冷声道|缓缓道)[：:,\s]+/g, '');
+  const fillers = [
+    '然而，', '但是，', '不仅如此，', '从某种意义上说，', '事实上，',
+    '不得不说，', '很显然，', '毫无疑问，', '意外的是，',
+    '某种程度来说，', '从某种意义上讲，'
+  ];
+  for (const f of fillers) {
+    s = s.split(f).join('');
+  }
+  s = s.replace(/眼中闪过一丝([^，。]+)/g, '目光$1');
+  s = s.replace(/某种不安涌上心头/g, '后颈一紧');
+  s = s.replace(/某种([^，。]{1,8})涌上心头/g, '$1漫了上来');
+  s = s.replace(/他感到一阵([^，。]+)/g, '他$1');
+  s = s.replace(/突然，/g, '');
+  s = s.replace(/  +/g, ' ').trim();
+  return s;
+}
+
+function escapeHTML(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// ==================== CLOSE PANELS ON ESC ====================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeApi();
+    closeHistory();
+  }
+});
+</script>
+
+<script src="scripts/home-idea.js"></script>
+<script src="scripts/reader-home.js"></script>
+</body>
+</html>
