@@ -1,7 +1,6 @@
 // Reuse the existing world dimensions, character dimensions, archive and API configuration.
 const openingKey = 'pending_immersive_opening_v1';
 let opening = null, openingTask = null, openingTicket = 0, entering = false, enterWhenReady = false;
-let pendingSetupAction = null;
 
 function openingField(text, name) {
     return (text.match(new RegExp('^' + name + '[：:]\\s*([\\s\\S]*?)(?=^(?:小说名称|剧情简介|世界名称|底层逻辑|身份背景|起始冲突|追读主线)[：:]|(?![\\s\\S]))', 'm'))?.[1] || '').trim();
@@ -66,9 +65,11 @@ function showOpening(message = '') {
     document.getElementById('setupHint').hidden = true;
     document.getElementById('generateStoryIdea').textContent = needsKey ? '设置后生成简介' : '生成简介';
     document.getElementById('preferenceHint').textContent = needsKey ? '设置完成后即可开始，也可以先在右侧写下剧情想法' : JimoPreferences.prompt(opening.readerPreferencesSnapshot) ? '已使用这次剧情想法与阅读偏好' : '可以直接开始，也可以在右侧写下这次想看的剧情';
+    document.getElementById('firstReadHint').hidden = !opening.ready || !!localStorage.getItem('current_story_session');
 }
 async function rollWorld(useCurrentIdea = false) {
     if (useCurrentIdea && !JimoHomeIdea.apply()) return false;
+    JimoSetup.clearHome();
     entering = false;
     enterWhenReady = false;
     const previous = opening?.ready ? structuredClone(opening) : null;
@@ -92,12 +93,14 @@ async function rollWorld(useCurrentIdea = false) {
         openingTask = null;
         opening.resume = true;
         saveOpening();
-        pendingSetupAction = rollWorld;
         showOpening('标签已随机好。设置 API Key 后继续准备背景。');
         return;
     }
     const prompt = `世界标签：${JSON.stringify(opening.tags)}\n以上标签仅作随机灵感，先选定一个核心体验，只用相容的维度补足世界；冲突或无关的标签可舍弃，以读者期待为先，不强行融合全部标签。\n虚构角色创作维度：${JSON.stringify(opening.characterTags)}\n${getPrefPrompt()}\n${JimoPreferences.prompt(opening.readerPreferencesSnapshot)}${JimoPreferences.genderPrompt(opening.playerGender)}\n根据以上组合推演自洽世界与沉浸主角背景。不要生成主角姓名，用“你”。身份与规则支撑简介里的优势和回报，使用白话，不堆设定术语。\n${JimoFiction.synopsisGuide(opening)}`;
+    let timeoutId, timedOut = false;
+    const waitForResponse = delay => { clearTimeout(timeoutId); timeoutId = setTimeout(() => { timedOut = true; controller.abort(); }, delay); };
     try {
+        waitForResponse(45000);
         const config = getApiConfig();
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + config.apiKey },
@@ -106,6 +109,7 @@ async function rollWorld(useCurrentIdea = false) {
             ] }), signal: controller.signal
         });
         const result = await JimoStream.read(response, text => {
+            waitForResponse(30000);
             if (ticket !== openingTicket) return;
             const storyTitle = openingField(text, '小说名称');
             if (storyTitle) document.getElementById('openingBookTitle').textContent = JimoFiction.bookTitle(storyTitle);
@@ -117,6 +121,7 @@ async function rollWorld(useCurrentIdea = false) {
             document.getElementById('openingStatus').textContent = '故事简介正在生成…';
         });
         if (ticket !== openingTicket || controller.signal.aborted) return;
+        JimoSetup.connected(config);
         const question = JimoFiction.canonQuestion(result.content);
         if (question) { const error = new Error(question); error.name = 'CanonQuestion'; throw error; }
         const field = name => openingField(result.content, name);
@@ -131,16 +136,18 @@ async function rollWorld(useCurrentIdea = false) {
         if (enterWhenReady) startCreating();
         return true;
     } catch (error) {
-        if (ticket !== openingTicket || error.name === 'AbortError') return;
+        if (ticket !== openingTicket || (error.name === 'AbortError' && !timedOut)) return;
+        if (timedOut) error = Object.assign(new Error(), { name: 'TimeoutError' });
+        JimoSetup.problem(error);
         const retainedPreview = !!preview.synopsis;
         if (retainedPreview) Object.assign(opening, preview, { ready: false, resume: true, rules: '', error: error.message });
         else if (previous) opening = previous;
         else { opening.resume = true; opening.error = error.message; }
         enterWhenReady = false;
         saveOpening();
-        showOpening((error.name === 'TypeError' ? '网络连接异常' : error.message) + (retainedPreview ? '；已保留新简介，背景尚未完成，请重试生成后再开始阅读' : error.name === 'CanonQuestion' ? '；请在剧情想法里补充后，再生成简介' + (previous ? '；已保留上一个世界' : '') : previous ? '；已保留上一个世界' : '；点击换一批重试'));
+        showOpening(JimoSetup.message(error) + (retainedPreview ? '；已保留新简介，背景尚未完成，请重试生成后再开始阅读' : error.name === 'CanonQuestion' ? '；请在剧情想法里补充后，再生成简介' + (previous ? '；已保留上一个世界' : '') : previous ? '；已保留上一个世界' : '；可点击重试生成'));
         return false;
-    } finally { if (ticket === openingTicket) openingTask = null; }
+    } finally { clearTimeout(timeoutId); if (ticket === openingTicket) openingTask = null; }
 }
 function startCreating() {
     if (entering) return;

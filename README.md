@@ -32,9 +32,21 @@
 
 ## 如何使用即文：从下载到读到第一段故事
 
-需要 Python 3、PC 浏览器，以及可用的 DeepSeek API Key。项目使用纯 HTML / CSS / JavaScript，无需安装 Node.js、前端依赖或运行构建命令。
+推荐下载[开箱体验包](https://github.com/BoyaOceane/Mind2Real-AI-Novel/releases/latest)：只需 PC 浏览器和自己的 DeepSeek API Key，无需安装 Python、Node.js 或前端依赖。
+
+| 电脑 | 选择的附件 | 解压后启动 |
+|---|---|---|
+| Windows 10/11，Intel/AMD 64位 | Windows-x64 ZIP | 双击“启动即文.cmd” |
+| Mac，Apple芯片（M系列） | macOS-arm64 ZIP | 双击“启动即文.command” |
+| Mac，Intel芯片 | macOS-x64 ZIP | 双击“启动即文.command” |
+
+**完整解压后再启动，保留启动窗口。** 包内运行环境已备齐，启动器会自检；如提示缺失或损坏，双击“修复运行环境”文件，自动下载并校验官方运行时，只修复当前包，不改系统环境。修复需要联网。Mac首次打开的安全提示见包内说明。
 
 ### 1. 下载并启动
+
+普通用户按上表启动后，浏览器会打开 **http://localhost:8080**，继续下面第2步。GitHub的“Source code”附件和“Code → Download ZIP”是源码，不是体验包。
+
+**仅源码运行需要 Python 3。** 以下是开发者或源码用户的启动方式：
 
 在 [GitHub 仓库](https://github.com/BoyaOceane/Mind2Real-AI-Novel) 点击 **Code → Download ZIP**，解压后在包含 `index.html` 的目录打开终端。
 
@@ -55,7 +67,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 
 ### 2. 设置模型
 
-点击首页 **“API设置”**，填写并保存自己的 DeepSeek API Key。当前默认模型为 `deepseek-flash`，设置中另有 `deepseek-v4-pro`；仓库不提供 Key，实际调用费用由使用者承担。
+点击首页 **“API设置”**。没有Key时，先在[DeepSeek官方平台](https://platform.deepseek.com/)创建，再回来粘贴。点击“保存并生成简介”即可开始；不想调用模型时选“仅保存”。模型选择在高级设置中，保留已有选择；仓库不提供Key或免费额度，调用按官方规则收费。
 
 ### 3. 描述想看的剧情，先看简介
 
@@ -73,7 +85,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 
 ### 4. 进入故事，决定下一步
 
-喜欢生成的书名与简介，就点击 **“进入这个世界”**。在阅读页点击 **“继续看”** 追读，或展开改走向，选择行动、输入你希望发生的剧情。开篇通常约250–450字，续写约350–600字，关键场面可适当延长。
+喜欢生成的书名与简介，就点击 **“开始阅读”**。在阅读页点击 **“继续看”** 追读，或展开改走向，选择行动、输入你希望发生的剧情。开篇通常约250–450字，续写约350–600字，关键场面可适当延长。
 
 姓名、性别和较稳定的题材偏好在首页 **“阅读偏好”** 中设置；测评可跳过，姓名留空用“你”。首页剧情想法优先于已存偏好，清空后恢复偏好随机；阅读中更新偏好需应用后才影响后续生成。
 

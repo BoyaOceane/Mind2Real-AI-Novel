@@ -12,7 +12,8 @@
         new MutationObserver(() => {
             if (open(panel)) {
                 trigger = document.activeElement;
-                controls(panel)[0]?.focus({ preventScroll: true });
+                const preferred = panel.dataset.initialFocus && panel.querySelector(panel.dataset.initialFocus);
+                (preferred || controls(panel)[0])?.focus({ preventScroll: true });
             } else if (trigger?.isConnected) {
                 trigger.focus({ preventScroll: true });
                 trigger = null;

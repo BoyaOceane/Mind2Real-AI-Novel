@@ -694,9 +694,11 @@
   <div id="openingHook" class="opening-hook" aria-label="剧情简介"><p class="opening-punchline">正在准备你的故事简介…</p></div>
   <details><summary>看看世界与身份背景</summary><h2 id="openingTitle">你的下一个世界</h2><p id="openingTags" class="reader-tags"></p><p id="openingDetails"></p></details>
   <p id="openingStatus" class="reader-note" role="status"></p>
+  <div id="setupProblem" class="setup-problem" hidden role="alert"><p id="setupProblemText"></p><div class="reader-actions"><button class="reader-secondary" onclick="openApi()">修改 API 设置</button><button class="reader-secondary" onclick="rollWorld(true)">重试生成</button><a href="https://platform.deepseek.com/" target="_blank" rel="noopener noreferrer">查看 API 账户 ↗</a></div></div>
   <div id="setupHint" hidden><button class="reader-secondary" onclick="openApi()">设置 API Key，准备背景</button></div>
   <div class="reader-actions"><button id="enterWorld" class="reader-primary" onclick="startCreating()">开始阅读</button><button class="reader-secondary" onclick="rollWorld(true)">换个故事</button></div>
   <p id="preferenceHint" class="reader-note"></p>
+  <p id="firstReadHint" class="reader-note" hidden>喜欢这份简介？点“开始阅读”。之后用“继续看”追读，用“改走向”说出你的想法。姓名、偏好和测评都可以以后再填。</p>
   <details><summary>高级创作设置</summary><a href="admin.html">提示词与角色塑造</a></details>
   </section>
   <aside class="home-idea" aria-labelledby="storyIdeaTitle">
@@ -714,22 +716,27 @@
 </div>
 
 <!-- API SETTINGS PANEL -->
-<div class="api-panel-overlay" id="apiPanelOverlay">
+<div class="api-panel-overlay" id="apiPanelOverlay" data-initial-focus="#apiKeyInput">
   <div class="api-panel">
     <button class="panel-close" onclick="closeApi()" aria-label="关闭API设置">关闭 ×</button>
     <div class="api-panel-title">DeepSeek API 设置</div>
-    <div style="margin-bottom:10px;">
+    <p class="reader-note">第一次使用？<a href="https://platform.deepseek.com/" target="_blank" rel="noopener noreferrer">去 DeepSeek 官方平台创建 API Key ↗</a>，再回来粘贴。生成使用你的 API 账户，按官方规则收费；体验包不附赠 Key 或额度。</p>
+    <p class="reader-note">Key 只保存在当前浏览器。剧情想法会保留，不必先填写阅读偏好。</p>
+    <details class="setup-model"><summary>模型与高级设置</summary><div style="margin-bottom:10px;">
       <label style="font-size:0.78rem;color:var(--text-secondary);">模型版本</label>
       <select id="apiModelSelect" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--paper-new);color:var(--ink-heavy);font-family:inherit;font-size:0.88rem;">
         <option value="deepseek-flash">deepseek-flash（快速生成）★ 推荐</option>
         <option value="deepseek-v4-pro">deepseek-v4-pro</option>
       </select>
-    </div>
+    </div></details>
     <div class="api-input-wrap">
-      <input type="password" class="api-input" id="apiKeyInput" placeholder="请输入 DeepSeek API Key">
+      <input type="password" class="api-input" id="apiKeyInput" aria-label="DeepSeek API Key" autocomplete="off" placeholder="粘贴你自己的 DeepSeek API Key">
       <button class="api-toggle" onclick="toggleApiKey()">显示</button>
     </div>
-    <button class="api-save-btn" onclick="saveApiKey()">保存</button>
+    <p id="apiSetupStatus" class="reader-note" role="status" aria-live="polite">尚未设置 API Key。</p>
+    <button class="api-save-btn" onclick="saveApiKey(true)">保存并生成简介</button>
+    <button class="api-test-btn" onclick="saveApiKey(false)">仅保存，不调用模型</button>
+    <p class="reader-note">生成简介会调用模型。无需先检查连接；下方检查也是一次小额模型调用。</p>
     <button class="api-test-btn" id="apiTestBtn" onclick="testApiKey()">检查连接</button>
     <details><summary>高级诊断</summary><button class="api-test-btn" id="apiTestGenerateBtn" onclick="testApiGenerate()">测试生成</button></details>
   </div>
@@ -771,6 +778,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="scripts/stream.js"></script>
+<script src="scripts/reader-setup.js"></script>
 <script src="scripts/character-traits.js"></script>
 <script src="scripts/fiction.js"></script>
 <script src="scripts/reader-preferences.js"></script>
@@ -928,6 +936,7 @@ function openApi() {
   input.type = 'password';
   document.getElementById('apiModelSelect').value = getApiConfig().model;
   panel.classList.add('open');
+  JimoSetup.changed();
 }
 
 function closeApi() {
@@ -971,130 +980,27 @@ function toggleApiKey() {
   }
 }
 
-function saveApiKey() {
+function saveApiKey(generate = true) {
   const key = document.getElementById('apiKeyInput').value.trim();
   if (!key) {
-    showToast('请输入有效的 API Key');
+    JimoSetup.status('请先粘贴你的 API Key。');
+    document.getElementById('apiKeyInput').focus();
     return;
   }
-  localStorage.setItem('deepseek_api_key', key);
-  localStorage.setItem('deepseek_model', document.getElementById('apiModelSelect').value);
+  try {
+    localStorage.setItem('deepseek_api_key', key);
+    localStorage.setItem('deepseek_model', document.getElementById('apiModelSelect').value);
+  } catch { JimoSetup.status('浏览器未能保存设置，请检查是否禁用了网站存储。你的输入仍在。'); return; }
   showToast('API Key 和模型已保存');
-  const resume = pendingSetupAction;
-  pendingSetupAction = null;
-  if (resume) setTimeout(resume, 0);
+  JimoSetup.changed();
+  if (generate && !JimoHomeIdea.apply()) return;
+  if (generate) setTimeout(() => rollWorld(), 0);
   closeApi();
 }
 
-async function testApiKey() {
-  const btn = document.getElementById('apiTestBtn');
-  if (btn.disabled) return;
-  btn.disabled = true;
-  btn.classList.add('testing');
-  btn.textContent = '测试中...';
+function testApiKey() { return JimoSetup.check(false); }
 
-  const apiKey = localStorage.getItem('deepseek_api_key') || document.getElementById('apiKeyInput').value.trim();
-  if (!apiKey) {
-    showToast('请先输入 API Key');
-    btn.disabled = false;
-    btn.classList.remove('testing');
-    btn.textContent = '检查连接';
-    return;
-  }
-
-  try {
-    // Use non-streaming request for reliable testing
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-flash',
-        messages: [
-          { role: 'user', content: 'hi' }
-        ],
-        max_tokens: 10,
-        stream: false
-      })
-    });
-
-    if (response.ok) {
-      showToast('API 连接成功');
-    } else {
-      const err = await response.json().catch(() => ({}));
-      showToast(`API 错误: ${err.error?.message || response.status}`);
-    }
-  } catch (err) {
-    console.error(err);
-    showToast('API 连接失败，请检查网络');
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove('testing');
-    btn.textContent = '检查连接';
-  }
-}
-
-async function testApiGenerate() {
-  const btn = document.getElementById('apiTestGenerateBtn');
-  if (btn.disabled) return;
-  btn.disabled = true;
-  btn.classList.add('testing');
-  btn.textContent = '测试中...';
-
-  const apiKey = localStorage.getItem('deepseek_api_key') || document.getElementById('apiKeyInput').value.trim();
-  if (!apiKey) {
-    showToast('请先输入 API Key');
-    btn.disabled = false;
-    btn.classList.remove('testing');
-    btn.textContent = '测试生成';
-    return;
-  }
-
-  try {
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-flash',
-        messages: [
-          { role: 'user', content: '说一句"测试成功"' }
-        ],
-        max_tokens: 50,
-        stream: false
-      })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
-      if (text) {
-        showToast(`生成成功: ${text.slice(0, 20)}`);
-      } else {
-        showToast('生成返回为空');
-      }
-    } else {
-      const err = await response.json().catch(() => ({}));
-      showToast(`API 错误: ${err.error?.message || response.status}`);
-    }
-  } catch (err) {
-    console.error(err);
-    showToast('请求失败，请检查网络');
-  } finally {
-    btn.disabled = false;
-    btn.classList.remove('testing');
-    btn.textContent = '测试生成';
-  }
-}
-
-// Click outside to close
-document.getElementById('apiPanelOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeApi();
-});
+function testApiGenerate() { return JimoSetup.check(true); }
 
 // ==================== HISTORY PANEL ====================
 let currentHistoryFilter = 'story';

@@ -3,7 +3,9 @@ globalThis.JimoStream = {
     async read(response, onChunk) {
         if (!response.ok) {
             const labels = { 401: 'API Key 无效，请检查设置', 402: '账户余额不足', 429: '请求过于频繁，请稍后重试' };
-            throw new Error(labels[response.status] || `服务暂不可用（${response.status}），请稍后重试`);
+            const error = new Error(labels[response.status] || `服务暂不可用（${response.status}），请稍后重试`);
+            error.status = response.status;
+            throw error;
         }
         const reader = response.body.getReader();
         const decoder = new TextDecoder();

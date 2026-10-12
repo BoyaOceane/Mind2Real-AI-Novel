@@ -122,3 +122,12 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .reader-view .ch-trait { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .reader-view .ch-trait > span { background: #f2ece1; border-radius: 4px; padding: 2px 6px; color: var(--reader-ink); }
 .reader-view .ch-trait .top-btn { font-size: 12px; padding: 4px 8px; min-height: 28px; }
+.setup-problem { border: 1px solid #b36c51; border-radius: 8px; padding: 12px 16px; background: #fff3e9; }
+.setup-problem[hidden] { display: none; }
+.setup-problem p { margin: 0; line-height: 1.7; }
+.setup-problem .reader-actions { flex-wrap: wrap; margin: 12px 0 0; }
+.api-panel .setup-model { margin: 12px 0; }
+.api-panel .setup-model summary { cursor: pointer; min-height: 36px; }
+.api-panel .reader-note { line-height: 1.7; }
+.api-panel #apiSetupStatus { min-height: 36px; color: var(--ink-heavy); }
+.api-panel { max-height: calc(100vh - 80px); overflow-y: auto; }
