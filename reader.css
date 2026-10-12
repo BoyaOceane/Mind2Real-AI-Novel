@@ -72,7 +72,8 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .reader-menu textarea { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #cfc8bc; background: var(--reader-paper); border-radius: 6px; line-height: 1.6; }
 .reader-menu button, .reader-menu a { display: block; width: 100%; text-align: left; min-height: 40px; padding: 8px; box-sizing: border-box; color: var(--reader-ink); }
 .reader-menu label { display: block; margin: 10px 8px; }
-.reader-view.show-info .world-banner { display: block; flex: 0 0 auto; max-height: 25vh; overflow: auto; margin: 10px 0; }
+.reader-view.show-info .world-banner { display: block; flex: 0 0 auto; max-height: 25vh; overflow: auto; margin: 8px; }
+.reader-view.show-info .main-area { padding-right: 332px; }
 .reader-view.show-info .story-sidebar { display: flex; position: fixed; top: 66px; right: 16px; bottom: 90px; width: 300px; background: var(--reader-paper); border: 1px solid #cfc8bc; z-index: 20; box-shadow: 0 8px 24px #29251f20; }
 .reader-view.show-info .story-sidebar .sidebar-tabs { flex-wrap: wrap; }
 .reader-profile { max-width: 720px; margin: 40px auto; padding: 0 24px; font-family: system-ui, 'Microsoft YaHei', sans-serif; }
@@ -80,6 +81,18 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .reader-profile fieldset label { display: inline-flex; gap: 8px; align-items: center; padding: 10px; min-height: 24px; }
 .reader-profile textarea { width: 100%; box-sizing: border-box; padding: 14px; background: #fffaf2; border: 1px solid #cfc8bc; border-radius: 8px; line-height: 1.8; }
 .reader-profile #profileStatus { min-height: 24px; }
+.preference-savebar { position: sticky; bottom: 0; background: var(--reader-paper); padding: 12px 0; border-top: 1px solid #ded7cb; z-index: 2; }
+.preference-savebar #profileStatus { margin: 0 0 8px; }
+.preference-savebar .reader-actions { margin: 0; }
+.preference-savebar .reader-note { margin-bottom: 0; }
+.panel-close { display: block; margin: 0 0 8px auto; padding: 8px 12px; border: 1px solid #cfc8bc; border-radius: 8px; background: transparent; cursor: pointer; }
+.reader-view #closeDirection { display: none; }
+.reader-view.show-direction #closeDirection { display: inline-flex; }
+.reader-view.show-direction #btnDirection { display: none; }
+.reader-view .story-sidebar .panel-close { margin: 8px 8px 0 auto; flex-shrink: 0; }
+.history-item-delete { width: auto; min-width: 44px; height: 40px; padding: 8px; border-radius: 8px; }
+.reader-view .toast { bottom: 100px; }
+@media (max-width: 1050px) { .reader-view.show-info .main-area { padding-right: 0; } }
 .reader-profile details { margin: 24px 0; }
 .reader-profile summary { cursor: pointer; padding: 12px 0; }
 .reader-profile .genre-panel { display: grid; gap: 20px; }
@@ -101,3 +114,11 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .home-idea label { margin-top: 10px; }
 
 .home-idea .reader-actions { position: sticky; bottom: -20px; background: #fffaf2; padding: 10px 0; margin-bottom: 0; }
+
+.reader-view .s-tab[hidden] { display: none; }
+.reader-view #memoryStatus { margin: 10px 12px; font-size: 12px; color: var(--reader-muted); line-height: 1.6; }
+.reader-view .ch-detail { padding: 0 8px 12px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.reader-view .ch-traits { display: grid; gap: 6px; margin-top: 8px; color: var(--reader-muted); }
+.reader-view .ch-trait { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.reader-view .ch-trait > span { background: #f2ece1; border-radius: 4px; padding: 2px 6px; color: var(--reader-ink); }
+.reader-view .ch-trait .top-btn { font-size: 12px; padding: 4px 8px; min-height: 28px; }

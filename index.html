@@ -679,8 +679,8 @@
   <div class="top-title">即文</div>
   <div class="top-right">
     <a class="top-btn" href="profile.html">阅读偏好</a>
-    <button class="top-btn" onclick="openHistory()">历史记录</button>
-    <button class="top-btn" onclick="openApi()">API设置</button>
+    <button class="top-btn" id="openBookshelf" onclick="openHistory()">书架</button>
+    <button class="top-btn" id="openApiSettings" onclick="openApi()">API设置</button>
 
   </div>
 </div>
@@ -695,18 +695,18 @@
   <details><summary>看看世界与身份背景</summary><h2 id="openingTitle">你的下一个世界</h2><p id="openingTags" class="reader-tags"></p><p id="openingDetails"></p></details>
   <p id="openingStatus" class="reader-note" role="status"></p>
   <div id="setupHint" hidden><button class="reader-secondary" onclick="openApi()">设置 API Key，准备背景</button></div>
-  <div class="reader-actions"><button id="enterWorld" class="reader-primary" onclick="startCreating()">进入这个世界</button><button class="reader-secondary" onclick="rollWorld()">换一批</button></div>
+  <div class="reader-actions"><button id="enterWorld" class="reader-primary" onclick="startCreating()">开始阅读</button><button class="reader-secondary" onclick="rollWorld(true)">换个故事</button></div>
   <p id="preferenceHint" class="reader-note"></p>
-  <details><summary>自定义开局与创作设置</summary><p class="reader-note">从书架载入已有世界，或设置写作风格。无需先完成这些设置。</p><button class="reader-secondary" onclick="openHistory()">载入已有世界</button> <button class="reader-secondary" onclick="openPref()">写作风格</button> <a href="admin.html">提示词与角色塑造</a></details>
+  <details><summary>高级创作设置</summary><a href="admin.html">提示词与角色塑造</a></details>
   </section>
   <aside class="home-idea" aria-labelledby="storyIdeaTitle">
     <h2 id="storyIdeaTitle">这次想看什么？</h2>
     <p class="reader-note">写下你想体验的故事，AI帮你把想法展开成专属小说。人物与剧情接得上，你随时可以决定下一步。</p>
-    <p class="reader-note">剧情想法会覆盖阅读偏好，包括想看、不想看和测评结果；不会修改已保存的偏好。清空后立即停用旧想法，后续按阅读偏好生成。</p>
+    <p class="reader-note">剧情想法与阅读偏好一起生效：想法决定主线，偏好补充口味、避雷与写法；冲突时优先按剧情想法，包括与长期避雷冲突的部分；其余偏好仍有效。清空想法后，只按阅读偏好生成，不会修改已保存的偏好。</p>
     <form id="storyIdeaForm">
       <label for="generalPreference">这次的剧情想法（可选）</label>
       <textarea id="generalPreference" rows="4" maxlength="1200" placeholder="例如：星际维修工靠修好废弃机甲翻身，军方争着请我出山。轻松嘴贫，爽得干脆。"></textarea>
-      <p id="storyIdeaStatus" class="reader-note" role="status">修改想法后，点“生成简介”更新左侧故事。</p>
+      <p id="storyIdeaStatus" class="reader-note" role="status">修改想法后，点“生成简介”或“换个故事”即可应用。</p>
       <div class="reader-actions"><button id="generateStoryIdea" class="reader-primary" type="submit">生成简介</button><button id="clearStoryIdea" class="reader-secondary" type="button">清空想法</button></div>
     </form>
     <a class="reader-note" href="profile.html">调整阅读偏好：题材、避雷与代入设定 →</a>
@@ -716,6 +716,7 @@
 <!-- API SETTINGS PANEL -->
 <div class="api-panel-overlay" id="apiPanelOverlay">
   <div class="api-panel">
+    <button class="panel-close" onclick="closeApi()" aria-label="关闭API设置">关闭 ×</button>
     <div class="api-panel-title">DeepSeek API 设置</div>
     <div style="margin-bottom:10px;">
       <label style="font-size:0.78rem;color:var(--text-secondary);">模型版本</label>
@@ -729,8 +730,8 @@
       <button class="api-toggle" onclick="toggleApiKey()">显示</button>
     </div>
     <button class="api-save-btn" onclick="saveApiKey()">保存</button>
-    <button class="api-test-btn" id="apiTestBtn" onclick="testApiKey()">测试连接</button>
-    <button class="api-test-btn" id="apiTestGenerateBtn" onclick="testApiGenerate()">测试生成</button>
+    <button class="api-test-btn" id="apiTestBtn" onclick="testApiKey()">检查连接</button>
+    <details><summary>高级诊断</summary><button class="api-test-btn" id="apiTestGenerateBtn" onclick="testApiGenerate()">测试生成</button></details>
   </div>
 </div>
 
@@ -748,16 +749,16 @@
 <div class="history-panel-overlay" id="historyPanelOverlay">
   <div class="history-panel">
     <div class="history-panel-header">
-      <div class="history-panel-title">历史记录</div>
+      <div class="history-panel-title">书架</div>
       <button class="history-panel-close" onclick="closeHistory()">&#x2715;</button>
     </div>
     <div class="history-filter-bar" id="historyFilterBar">
-      <button class="history-filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">全部</button>
+      <button class="history-filter-btn active" data-filter="story" onclick="setHistoryFilter('story')">故事</button>
       <button class="history-filter-btn" data-filter="world" onclick="setHistoryFilter('world')">世界观</button>
-      <button class="history-filter-btn" data-filter="protagonist" onclick="setHistoryFilter('protagonist')">主角</button>
-      <button class="history-filter-btn" data-filter="story" onclick="setHistoryFilter('story')">故事</button>
+      <details><summary>旧资料</summary><button class="history-filter-btn" data-filter="protagonist" onclick="setHistoryFilter('protagonist')">旧角色</button><button class="history-filter-btn" data-filter="all" onclick="setHistoryFilter('all')">全部记录</button></details>
     </div>
     <div class="history-list" id="historyList"></div>
+    <section id="legacyCharacter" hidden><button class="panel-close" onclick="document.getElementById('legacyCharacter').hidden = true">关闭旧角色 ×</button><h3 id="legacyCharacterTitle"></h3><pre id="legacyCharacterText" style="white-space:pre-wrap"></pre></section>
     <div class="history-panel-footer">
       <button class="btn btn-custom" onclick="exportAllHistory()">导出历史</button>
       <button class="btn btn-custom" onclick="document.getElementById('historyImportInput').click()">导入历史</button>
@@ -770,6 +771,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="scripts/stream.js"></script>
+<script src="scripts/character-traits.js"></script>
 <script src="scripts/fiction.js"></script>
 <script src="scripts/reader-preferences.js"></script>
 <script>
@@ -918,25 +920,6 @@ const worldDims = {
   '异化方向': ['废土世界','异星世界','深海世界','地下世界','浮空世界','巨构世界']
 };
 
-const protagonistChineseDims = {
-  '气质底色': ['天生领头者','柔韧适应者','热情感染型','外冷内热型','稳重可靠型','细腻滋养型','杀伐果断型','精致挑剔型','自由奔放型','神秘直觉型'],
-  '能量状态': ['主动进攻型','以守为攻型','极端偏执型'],
-  '处事风格': ['规矩守成型','野心攻击型','温和包容型','孤僻奇才型','踏实积累型','洒脱挥霍型','随遇而安型','毒舌叛逆型','独立自尊型','冲动义气型'],
-  '人格面具': ['天生领袖范','机灵多变型','热心操劳型','刚毅果断型','乐天知足型','亦正亦邪型','稳重守成型','温柔策划型','贪多求全型','直言惹祸型','公正调和型','爱管闲事型','敢爱敢恨型','破旧立新型'],
-  '内在驱动': ['自我实现驱动','财富积累驱动','事业成就驱动','情感关系驱动','自由漂泊驱动'],
-  '人生轨迹': ['稳扎稳打上升型','先苦后甜奋斗型','是非缠身体质','怀才不遇苦闷型','左手进右手出型'],
-  '命运课题': ['天生好命型','强势掌控型','贵人相助型','执念深重型']
-};
-
-const protagonistWesternDims = {
-  '性格内核': ['高神经质','低神经质','高宜人性','低宜人性','高尽责性','低尽责性','高外向性','低外向性','高开放性','低开放性','自恋型','马基雅维利型','精神病态型','完美主义','冲动型','回避型','偏执型'],
-  '内在驱动': ['成就驱动','权力驱动','亲和驱动','认知驱动','生存驱动'],
-  '关系模式': ['安全型','焦虑型','回避型依恋','紊乱型'],
-  '心理防线': ['升华型','幽默型','利他型','合理化','置换型','投射型','否认型','退行型'],
-  '创伤印记': ['童年忽视','背叛创伤','幸存者愧疚','代际创伤','创伤后成长'],
-  '自我认知': ['高自尊','低自尊','内控型','外控型','自我清晰','自我混乱']
-};
-
 // ==================== API PANEL ====================
 function openApi() {
   const panel = document.getElementById('apiPanelOverlay');
@@ -949,6 +932,7 @@ function openApi() {
 
 function closeApi() {
   document.getElementById('apiPanelOverlay').classList.remove('open');
+  document.getElementById('openApiSettings').focus({ preventScroll: true });
 }
 
 // ==================== USER PREFERENCE ====================
@@ -1014,7 +998,7 @@ async function testApiKey() {
     showToast('请先输入 API Key');
     btn.disabled = false;
     btn.classList.remove('testing');
-    btn.textContent = '测试连接';
+    btn.textContent = '检查连接';
     return;
   }
 
@@ -1048,7 +1032,7 @@ async function testApiKey() {
   } finally {
     btn.disabled = false;
     btn.classList.remove('testing');
-    btn.textContent = '测试连接';
+    btn.textContent = '检查连接';
   }
 }
 
@@ -1113,7 +1097,7 @@ document.getElementById('apiPanelOverlay').addEventListener('click', function(e)
 });
 
 // ==================== HISTORY PANEL ====================
-let currentHistoryFilter = 'all';
+let currentHistoryFilter = 'story';
 
 function setHistoryFilter(filter) {
   currentHistoryFilter = filter;
@@ -1140,6 +1124,7 @@ function openHistory() {
 
 function closeHistory() {
   document.getElementById('historyPanelOverlay').classList.remove('open');
+  document.getElementById('openBookshelf').focus({ preventScroll: true });
 }
 
 function renderHistoryList() {
@@ -1200,7 +1185,7 @@ function renderHistoryList() {
           <div class="history-item-title">${escapeHTML(item.type === 'story' ? JimoFiction.bookTitle(item.title || '无标题') : item.title || '无标题')}</div>
           <div class="history-item-meta">${typeLabel} · ${dateStr}${relation}</div>
         </div>
-        <button class="history-item-delete" onclick="event.stopPropagation(); deleteHistoryItem('${item.type}', '${itemId}', ${idx})">&#x2715;</button>
+        <button class="history-item-delete" aria-label="删除记录" onclick="event.stopPropagation(); deleteHistoryItem('${item.type}', '${itemId}', ${idx})">删除</button>
       </div>
     `;
   }).join('');
@@ -1212,7 +1197,15 @@ function loadHistoryItem(type, itemId, idx) {
     if (record) useArchivedWorld(record);
     return;
   }
-  if (type === 'protagonist') { showToast('旧角色设定保留在书架；新体验中你就是主角。'); return; }
+  if (type === 'protagonist') {
+    const record = loadArchive(ARCHIVE_KEYS.protagonists).find(r => r.id === itemId);
+    if (record) {
+      document.getElementById('legacyCharacterTitle').textContent = record.title || '旧角色';
+      document.getElementById('legacyCharacterText').textContent = record.content || record.desc || JSON.stringify(record, null, 2);
+      document.getElementById('legacyCharacter').hidden = false;
+    }
+    return;
+  }
 
   // Story: navigate to story.html
   let stories;
@@ -1256,6 +1249,7 @@ function loadHistoryItem(type, itemId, idx) {
 }
 
 function deleteHistoryItem(type, itemId, idx) {
+  if (!confirm('确定删除这条' + ({ story: '故事', world: '世界', protagonist: '旧角色' }[type] || '记录') + '吗？删除后无法恢复，请先导出备份。')) return;
   if (type === 'world') {
     const list = loadArchive(ARCHIVE_KEYS.worlds);
     const pos = list.findIndex(r => r.id === itemId);
@@ -1395,13 +1389,15 @@ function escapeHTML(str) {
 // ==================== CLOSE PANELS ON ESC ====================
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    closeApi();
-    closeHistory();
+    if (document.getElementById('apiPanelOverlay').classList.contains('open')) closeApi();
+    if (document.getElementById('historyPanelOverlay').classList.contains('open')) closeHistory();
+    document.getElementById('prefPanelOverlay').classList.remove('open');
   }
 });
 </script>
 
 <script src="scripts/home-idea.js"></script>
 <script src="scripts/reader-home.js"></script>
+<script src="scripts/reader-dialogs.js"></script>
 </body>
 </html>

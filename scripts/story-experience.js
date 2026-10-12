@@ -10,6 +10,7 @@ const helperStates = { profile: '', metadata: '' };
 function setHelperStatus(kind, message) {
     helperStates[kind] = message;
     document.getElementById('helperStatus').textContent = Object.values(helperStates).filter(Boolean).join(' · ');
+    if (kind === 'metadata' && document.getElementById('memoryStatus')) renderState();
 }
 
 function helperSignal(kind) {
@@ -88,7 +89,7 @@ function renderDraft() {
     const panel = document.getElementById('draftPanel');
     panel.hidden = !draft;
     if (!draft) return;
-    document.getElementById('draftText').textContent = draft.needsCanon ? '请在阅读偏好的“想看什么剧情”中补充原著信息并应用，再点“重新生成本段”。原行动和已有剧情已保留。' : draft.content || '尚未收到正文，原行动已保留。';
+    document.getElementById('draftText').textContent = draft.needsCanon ? '请在“更多 → 这本故事的后续方向”中补充原著信息并保存，再点“重新生成本段”。原行动和已有剧情已保留。' : draft.content || '尚未收到正文，原行动已保留。';
     document.getElementById('draftReason').textContent = draft.error || '未完成草稿';
     document.getElementById('acceptDraft').hidden = !draft.content?.trim();
     setLoadingState(false);

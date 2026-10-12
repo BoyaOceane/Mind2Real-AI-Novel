@@ -55,16 +55,20 @@ function saveOpening() {
     catch { showToast('开局未能保存到本机，请勿刷新'); return false; }
 }
 function showOpening(message = '') {
-    document.getElementById('openingBookTitle').textContent = (opening.storyTitle || opening.ready) ? JimoFiction.bookTitle(opening.storyTitle || opening.title) : '正在准备你的小说名…';
+    const needsKey = !getApiConfig().apiKey;
+    document.getElementById('openingBookTitle').textContent = (opening.storyTitle || opening.ready) ? JimoFiction.bookTitle(opening.storyTitle || opening.title) : opening.synopsis ? '书名尚未生成' : needsKey ? '你的故事，从这里开始' : '正在准备你的小说名…';
     document.getElementById('openingTags').textContent = Object.values(opening.tags).join(' · ');
     document.getElementById('openingTitle').textContent = opening.title || '你的下一个故事';
-    showSynopsis(opening.synopsis || [opening.background, opening.conflict].filter(Boolean).join('\n\n') || '正在准备你的故事简介…');
+    showSynopsis(opening.synopsis || [opening.background, opening.conflict].filter(Boolean).join('\n\n') || (needsKey ? '先设置 API Key，再为你生成故事简介。也可以先写下想看的剧情。' : '正在准备你的故事简介…'));
     document.getElementById('openingDetails').textContent = [opening.rules, opening.background].filter(Boolean).join('\n\n');
     document.getElementById('openingStatus').textContent = message || (opening.ready ? '故事已准备好' : '正在准备故事简介…');
-    document.getElementById('enterWorld').textContent = enterWhenReady ? '准备完成后进入 · 点击取消' : '进入这个世界';
-    document.getElementById('setupHint').hidden = !!getApiConfig().apiKey;
+    document.getElementById('enterWorld').textContent = needsKey ? '设置 API Key，开始故事' : enterWhenReady ? '准备完成后进入 · 点击取消' : '开始阅读';
+    document.getElementById('setupHint').hidden = true;
+    document.getElementById('generateStoryIdea').textContent = needsKey ? '设置后生成简介' : '生成简介';
+    document.getElementById('preferenceHint').textContent = needsKey ? '设置完成后即可开始，也可以先在右侧写下剧情想法' : JimoPreferences.prompt(opening.readerPreferencesSnapshot) ? '已使用这次剧情想法与阅读偏好' : '可以直接开始，也可以在右侧写下这次想看的剧情';
 }
-async function rollWorld() {
+async function rollWorld(useCurrentIdea = false) {
+    if (useCurrentIdea && !JimoHomeIdea.apply()) return false;
     entering = false;
     enterWhenReady = false;
     const previous = opening?.ready ? structuredClone(opening) : null;
@@ -72,14 +76,15 @@ async function rollWorld() {
     const ticket = ++openingTicket;
     const controller = new AbortController();
     openingTask = controller;
-    const restored = opening && !opening.ready && !opening.rules && opening.resume;
+    let preview = {};
+    const restored = !useCurrentIdea && opening && !opening.ready && !opening.rules && opening.resume;
     if (restored) opening.readerPreferencesSnapshot = JimoPreferences.snapshot();
     if (!restored) opening = {
         version: 1, tags: sampleDimensions(worldDims), playerGender: JimoPreferences.playerGender(), readerPreferencesSnapshot: JimoPreferences.snapshot(),
         characterTags: sampleDimensions(Math.random() < 0.5 ? protagonistChineseDims : protagonistWesternDims),
         title: '', storyTitle: '', synopsis: '', rules: '', background: '', conflict: '', ready: false
     };
-    opening.synopsisFormatVersion = 18;
+    opening.synopsisFormatVersion = 21;
     delete opening.resume;
     saveOpening();
     showOpening();
@@ -91,7 +96,7 @@ async function rollWorld() {
         showOpening('标签已随机好。设置 API Key 后继续准备背景。');
         return;
     }
-    const prompt = `世界标签：${JSON.stringify(opening.tags)}\n以上标签仅作随机灵感，先选定一个核心体验，只用相容的维度补足世界；冲突或无关的标签可舍弃，以读者期待为先，不强行融合全部标签。\n虚构角色创作维度：${JSON.stringify(opening.characterTags)}\n${opening.readerPreferencesSnapshot?.generalPreference?.trim() ? '' : getPrefPrompt()}\n${JimoPreferences.prompt(opening.readerPreferencesSnapshot)}${JimoPreferences.genderPrompt(opening.playerGender)}\n根据以上组合推演自洽世界与沉浸主角背景。不要生成主角姓名，用“你”。身份与规则支撑简介里的优势和回报，使用白话，不堆设定术语。\n${JimoFiction.synopsisGuide(opening)}`;
+    const prompt = `世界标签：${JSON.stringify(opening.tags)}\n以上标签仅作随机灵感，先选定一个核心体验，只用相容的维度补足世界；冲突或无关的标签可舍弃，以读者期待为先，不强行融合全部标签。\n虚构角色创作维度：${JSON.stringify(opening.characterTags)}\n${getPrefPrompt()}\n${JimoPreferences.prompt(opening.readerPreferencesSnapshot)}${JimoPreferences.genderPrompt(opening.playerGender)}\n根据以上组合推演自洽世界与沉浸主角背景。不要生成主角姓名，用“你”。身份与规则支撑简介里的优势和回报，使用白话，不堆设定术语。\n${JimoFiction.synopsisGuide(opening)}`;
     try {
         const config = getApiConfig();
         const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -108,6 +113,7 @@ async function rollWorld() {
             if (synopsis) showSynopsis(synopsis);
             const title = openingField(text, '世界名称');
             if (title) document.getElementById('openingTitle').textContent = title;
+            preview = { storyTitle, synopsis, title };
             document.getElementById('openingStatus').textContent = '故事简介正在生成…';
         });
         if (ticket !== openingTicket || controller.signal.aborted) return;
@@ -126,11 +132,13 @@ async function rollWorld() {
         return true;
     } catch (error) {
         if (ticket !== openingTicket || error.name === 'AbortError') return;
-        if (previous) opening = previous;
+        const retainedPreview = !!preview.synopsis;
+        if (retainedPreview) Object.assign(opening, preview, { ready: false, resume: true, rules: '', error: error.message });
+        else if (previous) opening = previous;
         else { opening.resume = true; opening.error = error.message; }
         enterWhenReady = false;
         saveOpening();
-        showOpening((error.name === 'TypeError' ? '网络连接异常' : error.message) + (error.name === 'CanonQuestion' ? '；请在剧情想法里补充后，再生成简介' + (previous ? '；已保留上一个世界' : '') : previous ? '；已保留上一个世界' : '；点击换一批重试'));
+        showOpening((error.name === 'TypeError' ? '网络连接异常' : error.message) + (retainedPreview ? '；已保留新简介，背景尚未完成，请重试生成后再开始阅读' : error.name === 'CanonQuestion' ? '；请在剧情想法里补充后，再生成简介' + (previous ? '；已保留上一个世界' : '') : previous ? '；已保留上一个世界' : '；点击换一批重试'));
         return false;
     } finally { if (ticket === openingTicket) openingTask = null; }
 }
@@ -180,7 +188,7 @@ function initReaderHome() {
         const value = JSON.parse(localStorage.getItem(openingKey));
         if (value?.version === 1 && value.tags && !value.consumed) opening = value;
     } catch { document.getElementById('openingStatus').textContent = '上次候选无法读取，将重新准备；书架不受影响。'; }
-    if (opening?.ready && !opening.archived && (!opening.storyTitle || !opening.synopsis || opening.synopsisFormatVersion !== 18)) opening = null;
+    if (opening?.ready && !opening.archived && (!opening.storyTitle || !opening.synopsis || opening.synopsisFormatVersion !== 21)) opening = null;
     if (opening && !opening.archived && (opening.playerGender || '') !== JimoPreferences.playerGender()) opening = null;
     if (opening && !opening.archived && JimoPreferences.prompt(opening.readerPreferencesSnapshot) !== JimoPreferences.prompt(JimoPreferences.snapshot())) opening = null;
     document.getElementById('preferenceHint').textContent = JimoPreferences.prompt(JimoPreferences.snapshot()) ? '已使用你保存的剧情想法与阅读偏好' : '可以直接进入，也可以在右侧写下这次想看的剧情';

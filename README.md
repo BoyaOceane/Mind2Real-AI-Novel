@@ -2,6 +2,8 @@
 
 **所想，即成文。**
 
+本仓库用于私有开发。对外发布与使用请访问 [Mind2Real-AI-Novel](https://github.com/BoyaOceane/Mind2Real-AI-Novel)。
+
 写你想看的故事。
 
 **即文（Mind2Real）是面向 PC 浏览器的 AI 小说生成器，帮助读者和创作者把剧情想法写成专属爽文，支持同人创作，也能随用户选择继续发展故事。**
@@ -22,7 +24,7 @@
 - **爽得有理由。** 能力有边界，关系有铺垫，选择有后果，收获能在后续故事里用上。爽点可以是胜利、被偏爱、经营收益、破局或自由，不只是一遍遍打脸。
 - **把自己放进故事。** 可设置姓名与性别；不填姓名时以“你”进入。题材、想看与不想看的内容放在独立阅读偏好中，可选测评不阻挡开读。
 
-首页非空的剧情想法会覆盖本次标签、排除项与测评偏好，原设置仍保留；清空想法后，新生成恢复使用阅读偏好。阅读过程中也能更新想法，影响后续内容，已有剧情不会被悄悄重写。
+剧情想法与阅读偏好共同影响生成；两者冲突时，剧情想法优先，未冲突的偏好继续生效。清空想法后，新生成不再使用旧想法，恢复按阅读偏好随机准备。阅读过程中也能更新想法，影响后续内容，已有剧情不会被悄悄重写。
 
 ## 支持同人创作
 
@@ -34,13 +36,13 @@
 
 ### 1. 下载并启动
 
-在 [GitHub 仓库](https://github.com/BoyaOceane/Mind2Real-AI-Novel) 点击 **Code → Download ZIP**，解压后在包含 `index.html` 的目录打开终端。
+在 [GitHub 仓库](https://github.com/BoyaOceane/Mind2Real) 点击 **Code → Download ZIP**，解压后在包含 `index.html` 的目录打开终端。
 
 已安装 Git 的用户也可以下载 `main` 分支：
 
 ```powershell
-git clone --branch main https://github.com/BoyaOceane/Mind2Real-AI-Novel.git
-cd Mind2Real-AI-Novel
+git clone --branch main https://github.com/BoyaOceane/Mind2Real.git
+cd Mind2Real
 ```
 
 在项目目录启动本地服务：
@@ -122,7 +124,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 | `profile.html` | 题材与排除、姓名性别、独立可选测评 |
 | `admin.html` | 世界、人物、剧情与文风提示配置 |
 
-当前优先支持 PC 浏览器。故事由模型生成，实际文笔与剧情效果需要试读。
+当前优先支持 PC 浏览器。自动检查使用模拟模型响应，实际文笔、爽感和原著准确度仍需试读。
 
 ## 版权与商业授权
 

@@ -1264,18 +1264,22 @@
             <a href="index.html" class="back-btn">← 返回</a>
             <span class="story-title" id="storyTitle">即文</span>
         </div>
-        <button class="top-btn" onclick="toggleReaderMenu()">更多</button>
+        <button class="top-btn" id="readerMore" onclick="toggleReaderMenu()">更多</button>
     </div>
     <div id="readerMenu" class="reader-menu" hidden>
+        <button class="top-btn" onclick="closeReaderPanel()">关闭菜单 ×</button>
         <button class="top-btn" onclick="openStoryInfo()">故事资料</button>
         <label>字号 <select id="readerFont" onchange="setReaderFont(this.value)"><option>16</option><option selected>18</option><option>20</option><option>22</option><option>24</option></select></label>
         <a href="profile.html?from=story">我的阅读偏好</a>
-        <label for="quickPreference">想看什么剧情？（自定义偏好）</label>
-        <textarea id="quickPreference" rows="3" maxlength="1200" placeholder="随时补充你喜欢的剧情和写法"></textarea>
-        <button class="top-btn" onclick="saveQuickPreference()">保存并用于后续剧情</button>
-        <button class="top-btn" onclick="applyReaderPreferences()">应用最新偏好到本故事</button>
+        <details><summary>这本故事的后续方向</summary>
+        <p class="reader-note">只影响这本故事后续内容，覆盖长期口味；不改变已发生的剧情。下一段的行动请用底部“改走向”。</p>
+        <label for="quickPreference">这本故事想怎样发展？</label>
+        <textarea id="quickPreference" rows="3" maxlength="1200" placeholder="例如：接下来重在经营商会，少一些战斗。留空恢复长期偏好。"></textarea>
+        <button class="top-btn" onclick="saveQuickPreference()">保存这本故事的方向</button>
+        <button class="top-btn" onclick="applyReaderPreferences()">改用最新长期偏好</button></details>
         <button class="top-btn" onclick="toggleApiPanel()">API 设置</button>
-        <details><summary>创作工具</summary><button class="top-btn" onclick="toggleStoryTools()">显示 / 收起段落编辑</button><button class="top-btn" onclick="openPref()">写作风格</button><a href="admin.html">提示词与角色塑造</a><button class="top-btn" onclick="exportStory()">导出正文</button><button class="top-btn" onclick="exportStory('json')">备份 JSON</button></details>
+        <details><summary>导出与备份</summary><button class="top-btn" onclick="exportStory()">导出正文 TXT</button><button class="top-btn" onclick="exportStory('json')">备份故事 JSON</button></details>
+        <details><summary>高级创作工具</summary><button class="top-btn" onclick="toggleStoryTools()">显示 / 收起段落编辑</button><button class="top-btn" onclick="openStoryToolTab('style')">文风档案</button><button class="top-btn" onclick="openStoryToolTab('deflavor')">表达避雷</button><a href="admin.html">提示词与角色塑造</a></details>
         <button id="btnConvertNovel" hidden></button><button id="btnSidebar" hidden></button>
     </div>
     <!-- API Settings Modal -->
@@ -1285,8 +1289,8 @@
             <div class="api-model-select">
                 <label style="font-size:0.78rem;color:var(--text-secondary);">模型版本</label>
                 <select id="apiModelSelect" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg-secondary);color:var(--text-primary);font-family:inherit;font-size:0.88rem;">
-                    <option value="deepseek-v4-pro">deepseek-v4-pro ★ 推荐</option>
-                    <option value="deepseek-flash">deepseek-flash（快速）</option>
+                    <option value="deepseek-flash">deepseek-flash（快速生成）★ 推荐</option>
+                    <option value="deepseek-v4-pro">deepseek-v4-pro</option>
                 </select>
             </div>
             <div class="api-input-row" style="margin-top:12px;">
@@ -1296,8 +1300,8 @@
             <div class="api-modal-actions">
                 <button class="btn" onclick="toggleApiPanel()">取消</button>
                 <button class="btn btn-primary" onclick="saveApiKey()">保存</button>
-                <button class="btn btn-sm" id="apiTestBtn" onclick="testApiKey()">测试连接</button>
-                <button class="btn btn-sm" id="apiTestGenerateBtn" onclick="testApiGenerate()">测试生成</button>
+                <button class="btn btn-sm" id="apiTestBtn" onclick="testApiKey()">检查连接</button>
+                <details><summary>高级诊断</summary><button class="btn btn-sm" id="apiTestGenerateBtn" onclick="testApiGenerate()">测试生成</button></details>
             </div>
         </div>
     </div>
@@ -1358,16 +1362,17 @@
 
         <!-- Sidebar -->
         <div class="story-sidebar" id="storySidebar">
+            <button class="top-btn panel-close" onclick="closeReaderPanel()">关闭面板 ×</button>
             <div class="sidebar-tabs" id="sidebarTabs">
-                <button class="s-tab active" data-tab="outline" onclick="switchTab('outline')">提纲</button>
-                <button class="s-tab" data-tab="clues" onclick="switchTab('clues')">线索</button>
+                <button class="s-tab active" data-tab="state" onclick="switchTab('state')">当前状态</button>
+                <button class="s-tab" data-tab="outline" onclick="switchTab('outline')">剧情回顾</button>
+                <button class="s-tab" data-tab="clues" onclick="switchTab('clues')">线索与承诺</button>
                 <button class="s-tab" data-tab="characters" onclick="switchTab('characters')">人物</button>
-                <button class="s-tab" data-tab="profile" onclick="switchTab('profile')">画像</button>
-                <button class="s-tab" data-tab="style" onclick="switchTab('style')">文风</button>
-                <button class="s-tab" data-tab="deflavor" onclick="switchTab('deflavor')">去芜</button>
+                <button class="s-tab" data-tab="profile" onclick="switchTab('profile')" hidden>历史画像</button>
             </div>
-            <div class="sidebar-body" id="sidebarBody">
-                <div class="sb-pane active" id="sbOutline"><div class="sb-list" id="outlineList"></div></div>
+            <div class="sidebar-body" id="sidebarBody"><p id="memoryStatus" role="status"></p>
+                <div class="sb-pane active" id="sbState"><button class="top-btn" onclick="refreshStoryHelpers()">更新资料</button><div class="sb-list" id="stateList"></div></div>
+                <div class="sb-pane" id="sbOutline"><div class="sb-list" id="outlineList"></div></div>
                 <div class="sb-pane" id="sbClues"><div class="sb-list" id="cluesList"></div></div>
                 <div class="sb-pane" id="sbChars"><div class="sb-list" id="charsList"></div></div>
                 <div class="sb-pane" id="sbProfile"><div class="sb-list" id="profileList"></div><pre id="legacyQuiz" hidden style="white-space:pre-wrap"></pre></div>
@@ -1398,16 +1403,19 @@
         <!-- 常驻操作栏 -->
         <div class="bottom-action-row">
             <button class="branch-action" id="btnSkipQuiz" style="display:none;">跳过测试，直接开始</button>
-            <button class="branch-action" id="btnStop" onclick="stopGeneration()" hidden>停止生成</button><button class="branch-action" id="btnDirectContinue">继续看</button><button class="branch-action" id="btnDirection" aria-expanded="false" onclick="openReaderDirection()">改走向</button>
-            <button class="branch-action" id="btnRefresh">换一批</button>
+            <button class="branch-action" id="btnStop" onclick="stopGeneration()" hidden>停止生成</button><button class="branch-action" id="btnDirectContinue">继续看</button><button class="branch-action" id="btnDirection" aria-expanded="false" onclick="openReaderDirection()">改走向</button><button class="branch-action" id="closeDirection" onclick="openReaderDirection()">收起走向</button>
+            <button class="branch-action" id="btnRefresh">换一组建议</button>
         </div>
     </div>
     <div id="toast" class="toast" aria-live="polite"></div>
 
     <script src="scripts/stream.js"></script>
+    <script src="scripts/character-traits.js"></script>
     <script src="scripts/fiction.js"></script>
     <script src="scripts/reader-preferences.js"></script>
+    <script src="scripts/story-memory.js"></script>
     <script src="scripts/reader-story.js"></script>
+    <script src="scripts/reader-dialogs.js"></script>
     <script src="scripts/story-experience.js"></script>
     <script>
         // Global state
@@ -1435,7 +1443,7 @@
         let storyClues = [];
         let characterCards = [];
         let characterRelations = [];
-        let currentSidebarTab = 'outline';
+        let currentSidebarTab = 'state';
 
         // System prompts — read from localStorage (synced with admin.html)
         // ---- 沉浸探索：模式与人称 ----
@@ -1806,6 +1814,7 @@
             if (currentStory.characterRelations) characterRelations = currentStory.characterRelations;
 
             // Render sidebar
+            renderState();
             renderOutline();
             renderClues();
             renderChars();
@@ -1860,7 +1869,7 @@
                         '</div>';
                 }
                 return '<div id="seg-' + i + '" class="story-segment">' +
-                    '<div class="seg-toolbar"><button class="seg-edit-btn" onclick="editSegment(' + i + ')">润色</button><button class="seg-edit-btn" onclick="deFlavor(' + i + ')">去芜</button></div>' +
+                    '<div class="seg-toolbar"><button class="seg-edit-btn" onclick="editSegment(' + i + ')">修改本段</button><button class="seg-edit-btn" onclick="deFlavor(' + i + ')">精简表达</button></div>' +
                     (h.action ? '<div class="story-action">你的行动：' + escapeHTML(h.action) + '</div>' : '') + reasoningBlock +
                     '<div class="seg-content">' + textToHtml(h.content) + '</div>' +
                 '</div>';
@@ -2080,6 +2089,8 @@ JSON 格式：
             if (typeof seg.original === 'undefined') seg.original = oldContent;
             saveStoryData();
             autoSave();
+            renderState();
+            refreshStoryHelpers();
             const original = seg.original || oldContent;
             if (newText !== original) {
                 try { await analyzeStyleDiff(original, newText); } catch (e) { console.error('analyzeStyleDiff error:', e); }
@@ -2637,7 +2648,7 @@ JSON 结构：
                 else { const e = await r.json().catch(() => ({})); showToast('错误: ' + (e.error?.message || r.status)); }
             } catch (e) { showToast('网络错误'); }
             btn.disabled = false;
-            btn.textContent = '测试连接';
+            btn.textContent = '检查连接';
         }
 
         async function testApiGenerate() {
@@ -2716,7 +2727,7 @@ JSON 结构：
             if (['TEXTAREA', 'INPUT', 'SELECT', 'BUTTON'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) return;
             const panel = document.getElementById('branchPanel');
             const key = parseInt(event.key);
-            if (panel.classList.contains('active') && key >= 1 && key <= 4) {
+            if (document.body.classList.contains('show-direction') && panel.classList.contains('active') && key >= 1 && key <= 4) {
                 if (currentBranches.length >= key) {
                     event.preventDefault();
                     const b = currentBranches[key - 1];
@@ -2727,12 +2738,6 @@ JSON 结构：
                     // 回顾旧题时数字键不触发最新题作答（避免与面板展示的回顾选项不一致）
                     event.preventDefault();
                     answerQuizOption(currentOptions[key - 1]);
-                }
-            }
-            if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey) {
-                event.preventDefault();
-                if (!panel.classList.contains('active') || (currentBranches.length === 0 && currentOptions.length === 0)) {
-                    continueStory();
                 }
             }
         });
@@ -2916,97 +2921,43 @@ JSON 结构：
             const config = getApiConfig();
             if (!config.apiKey) return;
             const fullStory = currentStory.history.map((h, i) => `[段${i + 1}]\n${h.content}`).join('\n\n');
+            const personas = JimoMemory.personas(currentStory);
             if (!fullStory.trim()) return;
-            setHelperStatus('metadata', '提纲、人物和线索更新中');
+            setHelperStatus('metadata', '故事资料更新中，仍可继续阅读');
 
-            const systemPrompt = `你是一位专业的故事分析员。请阅读以下完整故事，提取结构化元数据。只输出合法JSON，不要任何额外文字。
-
-JSON结构：
+            const systemPrompt = `你是一位专业的故事分析员。按完整正文重建当前资料快照，只输出合法JSON。
+格式：
 {
-  "outline": [
-    { "type": "转折|高潮|悬念|铺垫|揭示", "importance": "critical|major|normal", "summary": "15字以内" }
-  ],
-  "clues": [
-    { "name": "线索名", "stateChange": "伏笔→展开", "desc": "一句话描述", "importance": "major|normal" }
-  ],
-  "characters": [
-    { "id": "char_001", "name": "人物名", "trauma": "1-10", "desire": "表层欲望", "need": "深层需求", "tag": "主角|配角|反派|中立", "desc": "一句话简述" }
-  ],
-  "relations": [
-    { "source": "char_001", "target": "protagonist", "type": "敌对|盟友|主仆|血缘|师徒|爱慕|竞争", "strength": 3, "scene": "首次建立关系的场景" }
-  ]
+  "state": [{"kind":"能力|资源|目标|地位", "name":"状态名", "desc":"当前情况与已设边界", "_seg":0, "evidence":"该段原文短句"}],
+  "outline": [{"type":"转折|高潮|悬念|铺垫|揭示", "importance":"critical|major|normal", "summary":"重要事件简述", "_seg":0, "evidence":"该段原文短句"}],
+  "clues": [{"kind":"线索|承诺|待兑现回报", "name":"名称", "stateChange":"未解决|推进中|已兑现|已解决", "desc":"事实与当前进度", "importance":"major|normal", "_seg":0, "evidence":"该段原文短句"}],
+  "characters": [{"id":"角色ID", "name":"正文中的人物名", "tag":"主角|配角|反派|中立", "desc":"已知身份和当前关系", "goal":"正文明确的目标", "knowledge":"明确知道什么、还不知道什么", "traits":[{"dimension":"角色维度", "label":"对应标签或简短行为设定", "_seg":0, "evidence":"支持该标签的逐字原文"}], "_seg":0, "evidence":"该段原文短句"}],
+  "relations": [{"source":"角色ID", "target":"角色ID或protagonist", "type":"当前关系", "scene":"形成或改变关系的依据", "_seg":0, "evidence":"该段原文短句"}]
 }
-
-规则：
-1. outline只标记真正重要的转折点（2-5个即可）
-2. clues追踪已有线索的状态变化，不要重复相同状态
-3. characters只添加新角色或角色新信息，已存在的忽略
-4. relations记录新建立或变化的关系
-5. 没有的字段返回空数组
-6. 只输出JSON，不要markdown代码块`;
+段编号从0开始：正文标记[段1]对应_seg:0。每条都要有相应段落和逐字原文证据，证据不是推测正确的保证，提取内容必须由正文支持。
+这是完整替换快照，不是新增列表；保留仍有效的早期重要事实和未完成承诺，按后续正文更新，不重复同一事件。outline按时间收录重要已发生事件，clues区分已兑现与未兑现，不将旧收益重新算成奖励。state记录目前可用资源、实力边界、目标与地位，不把潜力当现实力或花掉的钱当余额。
+为已登场的主角与有稳定姓名/称呼的配角、对手保留人物卡，不能因本段未出场就遗漏仍有作用的人物。人物姓名一致，未明确的目标或知情情况留空；不推断创伤/心理，不让不同人共享知识。主角与配角同样整理traits，只选正文明确或充分体现的身份经历、动机、能力、性格、关系、行为与说话习惯，每个标签独立附依据，不用身份证据包办性格推断，不因一次笑/停顿给人贴固定人格，不把随机参考或未来设想当已采用人设。无依据就traits:[]，不强制补齐所有维度；有后续变化按事实更新，保留仍有效的旧标签。
+固定角色人设：${JSON.stringify(personas)}。已建立维度沿用卡片，不因新正文反常行为改标签；目标完成、当前知情、关系进展和资源按事实更新。未知维度仅在有依据且与固定人设相容时补充，不改卡片来迁就OOC正文。
+有候选标签的维度使用目录原标签；空候选的维度用简短具体事实，自定义原则的已体现内容用自定义设定。沿用当前角色框架及目录：${JimoFiction.characterSystem(true)}
+relations仅引用本次characters的ID或protagonist。只提取已发生事实，不把简介、未来愿望或想象变成事实，不编数量、关系、能力或未来结局；不明确就不填。五个字段都返回数组，没有就为空数组。`;
 
             try {
-                const { content } = await callDeepSeek(fullStory, systemPrompt, null, false, null, null, signal);
+                const { content } = await callDeepSeek(fullStory, systemPrompt, null, false, 'deepseek-flash', 0.2, signal);
                 if (ticket !== metadataRequest || version !== storyVersion()) return;
-                if (!content) throw new Error('元数据为空');
-                const meta = parseStyleJson(content);  // reuse JSON parser
-                if (!meta) throw new Error('元数据格式无效');
-
-                const segIdx = currentStory.history.length - 1;
-                let hasNew = false;
-
-                if (meta.outline && meta.outline.length > 0) {
-                    meta.outline.forEach(o => o._seg = segIdx);
-                    storyOutline.push(...meta.outline);
-                    renderOutline();
-                    renderTimeline();
-                    hasNew = true;
-                }
-                if (meta.clues && meta.clues.length > 0) {
-                    meta.clues.forEach(c => { c._seg = segIdx;
-                        const exist = storyClues.find(x => x.name === c.name);
-                        if (exist) { exist.stateChange = c.stateChange;
-                            exist.desc = c.desc;
-                            exist.importance = c.importance; }
-                        else { storyClues.push(c); }
-                    });
-                    renderClues();
-                    renderTimeline();
-                    hasNew = true;
-                }
-                if (meta.characters && meta.characters.length > 0) {
-                    meta.characters.forEach(nc => {
-                        const exist = characterCards.find(c => c.id === nc.id);
-                        if (exist) { exist.freq = (exist.freq || 1) + 1; }
-                        else { nc.freq = 1;
-                            characterCards.push(nc); }
-                    });
-                    renderChars();
-                    hasNew = true;
-                }
-                if (meta.relations && meta.relations.length > 0) {
-                    meta.relations.forEach(nr => {
-                        const exist = characterRelations.find(r => r.source === nr.source && r.target === nr.target);
-                        if (exist) { exist.type = nr.type;
-                            exist.strength = nr.strength;
-                            exist.scene = nr.scene; }
-                        else { characterRelations.push(nr); }
-                    });
-                    renderRelationGraph();
-                    hasNew = true;
-                }
-                currentStory.metadataProcessedVersion = currentStory.contentVersion;
+                const meta = JimoMemory.snapshot(parseStyleJson(content), currentStory.history);
+                currentStory.characterPersonas = JimoMemory.establishPersonas(meta.characters, currentStory.history, personas);
+                storyOutline = meta.outline;
+                storyClues = meta.clues;
+                characterCards = meta.characters;
+                characterRelations = meta.relations;
+                currentStory.storyState = meta.state;
+                currentStory.metadataProcessedVersion = currentStory.contentVersion || 0;
                 setHelperStatus('metadata', '');
-                if (hasNew) {
-                    currentStory.storyOutline = storyOutline;
-                    currentStory.storyClues = storyClues;
-                    currentStory.characterCards = characterCards;
-                    currentStory.characterRelations = characterRelations;
-                    saveStoryData();
-                    autoSave();
-                }
+                saveStoryData();
+                autoSave();
+                renderState(); renderOutline(); renderClues(); renderChars(); renderTimeline();
             } catch (e) {
-                if (ticket === metadataRequest && version === storyVersion()) setHelperStatus('metadata', '提纲、人物和线索暂未更新');
+                if (ticket === metadataRequest && version === storyVersion()) { setHelperStatus('metadata', '资料更新失败，可重试；续写仍沿用角色人设和既有剧情'); renderState(); }
             }
         }
 
@@ -3088,6 +3039,22 @@ JSON结构：
             }
         }
 
+        function memorySource(row) {
+            if (!Number.isInteger(row._seg) || !currentStory.history[row._seg]) return '';
+            return '<button class="top-btn" onclick="openMemorySource(' + row._seg + ')">查看第' + (row._seg + 1) + '段依据</button>';
+        }
+        function openMemorySource(index) {
+            document.body.classList.remove('show-info');
+            scrollToSeg(index);
+        }
+        function renderState() {
+            const list = document.getElementById('stateList');
+            if (!list) return;
+            const fresh = currentStory.metadataProcessedVersion === (currentStory.contentVersion || 0);
+            document.getElementById('memoryStatus').textContent = helperStates.metadata || (fresh ? '动态资料来自正文；固定人设以角色卡为准，点击依据可回看。' : '动态资料尚未同步，续写沿用角色卡人设与既有剧情。');
+            list.innerHTML = (currentStory.storyState || []).map(row => '<div class="cl-item"><span><strong>' + escapeHTML(row.name) + '</strong><br>' + escapeHTML(row.desc) + memorySource(row) + '</span></div>').join('') || '<p>暂无明确状态，随剧情自动整理。</p>';
+        }
+
         function renderOutline() {
             const list = document.getElementById('outlineList');
             if (!list) return;
@@ -3105,14 +3072,26 @@ JSON结构：
             if (storyClues.length === 0) { list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.78rem;">暂无线索</div>'; return; }
             list.innerHTML = storyClues.map(c => {
                 const s = c.stateChange || c.state || '';
-                return '<div class="cl-item"><span class="cl-dot"></span><span><span class="cl-name">' + escapeHTML(c.name) + '</span>' + escapeHTML(c.desc) + '</span><span class="cl-state">' + escapeHTML(s) + '</span></div>';
+                return '<div class="cl-item"><span class="cl-dot"></span><span><span class="cl-name">' + escapeHTML(c.name) + '</span>' + escapeHTML(c.desc) + memorySource(c) + '</span><span class="cl-state">' + escapeHTML(s) + '</span></div>';
             }).join('');
         }
 
+        function renderCharacterDetails(c) {
+            if (!c) return '';
+            const traits = JimoMemory.personas(currentStory).find(row => row.id === c.id)?.traits || [];
+            const labels = traits.map(row => {
+                const source = currentStory.history[row._seg]?.content.includes(row.evidence) ? memorySource(row) : '<small>建卡依据：' + escapeHTML(row.evidence) + '（原正文已改动）</small>';
+                return '<div class="ch-trait"><span>' + escapeHTML(row.dimension) + '：' + escapeHTML(row.label) + '</span>' + source + '</div>';
+            }).join('');
+            const source = traits.some(row => row._seg === c._seg) ? '' : memorySource(c);
+            return '<div class="ch-detail">' + escapeHTML(c.desc || '') + (c.goal ? '<br>当前目标：' + escapeHTML(c.goal) : '') + (c.knowledge ? '<br>当前知情：' + escapeHTML(c.knowledge) : '') + (labels ? '<div class="ch-traits">固定角色人设（后续行为以此为准）' + labels + '</div>' : '') + source + '</div>';
+        }
         function renderChars() {
             const list = document.getElementById('charsList');
             if (!list) return;
             let html = '';
+            const cards = new Map(characterCards.map(c => [c.id, c]));
+            for (const persona of JimoMemory.personas(currentStory)) cards.set(persona.id, { ...cards.get(persona.id), ...persona });
             // Relationship graph at top, collapsible
             if (characterRelations.length > 0 || Object.keys(characterCards).length > 1) {
                 const graphSvg = buildRelationGraphSvg();
@@ -3123,13 +3102,16 @@ JSON结构：
             }
             if (currentStory.protagonist) {
                 html += '<div class="ch-item"><span class="ch-avatar">主</span><span class="ch-name">' + escapeHTML(currentStory.protagonist) + '</span><span class="ch-rel">主角</span></div>';
+                html += renderCharacterDetails([...cards.values()].find(c => c.tag === '主角' || c.id === 'protagonist'));
+                const openingTags = Object.entries(currentStory.characterTags || {}).map(([dimension, label]) => escapeHTML(dimension) + '：' + escapeHTML(String(label)));
+                if (openingTags.length) html += '<details class="ch-detail"><summary>开局参考标签（未必全部采用）</summary>' + openingTags.join('<br>') + '</details>';
             }
-            const sorted = [...characterCards].sort((a, b) => (b.freq || 0) - (a.freq || 0));
+            const sorted = [...cards.values()].sort((a, b) => (b.freq || 0) - (a.freq || 0));
             sorted.forEach(c => {
                 if (c.tag !== '主角') {
                     const ini = c.name ? c.name[0] : '?';
                     const tagLabel = (c.tag || c.relation || '') + ((c.freq || 0) > 1 ? ' ×' + c.freq : '');
-                    html += '<div class="ch-item"><span class="ch-avatar">' + escapeHTML(ini) + '</span><span class="ch-name">' + escapeHTML(c.name) + '</span><span class="ch-rel">' + escapeHTML(tagLabel) + '</span></div>';
+                    html += '<div class="ch-item"><span class="ch-avatar">' + escapeHTML(ini) + '</span><span class="ch-name">' + escapeHTML(c.name) + '</span><span class="ch-rel">' + escapeHTML(tagLabel) + '</span></div>' + renderCharacterDetails(c);
                 }
             });
             list.innerHTML = html || '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.78rem;">暂无角色</div>';
@@ -3206,16 +3188,7 @@ JSON结构：
             return svg;
         }
 
-        function renderRelationGraph() {
-            const svg = buildRelationGraphSvg();
-            if (!svg) return;
-            const exist = document.querySelector('.ch-graph');
-            if (exist) exist.remove();
-            const list = document.getElementById('charsList');
-            if (list && !list.querySelector('.ch-graph')) {
-                list.insertAdjacentHTML('afterbegin', '<div class="ch-graph">' + svg + '</div>');
-            }
-        }
+        function renderRelationGraph() { renderChars(); }
 
         function showTT(el, text) {
             let tt = document.getElementById('nodeTooltip');
@@ -3299,7 +3272,8 @@ JSON结构：
         function switchTab(tab) {
             currentSidebarTab = tab;
             document.querySelectorAll('.s-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-            document.querySelectorAll('.sb-pane').forEach(p => p.classList.toggle('active', p.id === 'sb' + tab.charAt(0).toUpperCase() + tab.slice(1)));
+            document.querySelectorAll('.sb-pane').forEach(p => p.classList.toggle('active', p.id === (tab === 'characters' ? 'sbChars' : 'sb' + tab.charAt(0).toUpperCase() + tab.slice(1))));
+            renderState();
             if (tab === 'characters') { renderChars();
                 renderRelationGraph(); }
             else if (tab === 'deflavor') { renderDeflavorTaboos(); }

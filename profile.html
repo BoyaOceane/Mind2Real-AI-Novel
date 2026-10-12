@@ -7,7 +7,7 @@
     <p class="reader-eyebrow">即文 · 读懂你的期待</p>
     <h1>我的阅读偏好</h1>
     <p>设置代入姓名与性别，或了解自己的阅读期待。选好平时的口味与不想看的内容后保存。首页只需描述这次想看的剧情，测评可跳过。</p>
-    <p class="reader-note">偏好保存在本机。启用测评时，摘要与代入人设会发送给你配置的模型服务，原始问答记录不发送；标签和排除项用于新故事；首页的剧情描述单独应用，不会修改这些长期选择。</p>
+    <p class="reader-note">偏好保存在本机。启用测评时，摘要与代入人设会发送给你配置的模型服务，原始问答记录不发送；标签和排除项与首页剧情想法共同用于新故事；想法决定主线，不会修改这些长期选择。</p>
     <form id="profileForm">
         <div class="reader-identity">
             <label class="reader-name">故事里怎么称呼你？（可留空）<input id="playerName" maxlength="20" placeholder="留空时用“你”称呼" autocomplete="off"></label>
@@ -16,13 +16,13 @@
         <p class="reader-note">姓名、性别和首页剧情想法不受下方测评开关影响；已有故事沿用原设定。</p>
         <details id="genrePreferences"><summary>题材与口味（可多选）<span id="genreSelectionCount" class="reader-note"></span></summary>
         <fieldset><legend>选择想看或不想看</legend>
-        <p class="reader-note">切换想看或不想看来选择标签；同一标签互斥，不选表示不限。</p>
+        <p class="reader-note">切换想看或不想看来选择标签；同一标签互斥，不选表示不限。鼠标停在想看标签上，可查看它能带来的阅读体验；具体以你的剧情想法为准。</p>
         <div class="genre-tabs" role="tablist" aria-label="想看或不想看">
             <button id="wantedGenreTab" type="button" role="tab" aria-selected="true" aria-controls="wantedGenres">想看（0）</button>
             <button id="excludedGenreTab" type="button" role="tab" aria-selected="false" aria-controls="excludedGenres" tabindex="-1">不想看（0）</button>
-        </div><div id="genreTags"></div></fieldset>
+        </div><div id="genreTags"></div><div id="exclusionPreferences" hidden><label for="excludedPreference">补充不想出现的内容</label><textarea id="excludedPreference" rows="2" maxlength="600" placeholder="例如：不要虐主，不要强加恋爱线。"></textarea></div></fieldset>
         </details>
-        <details id="exclusionPreferences"><summary>长期避开的内容（可选）</summary><label for="excludedPreference">不想出现什么？</label><textarea id="excludedPreference" rows="2" maxlength="600" placeholder="例如：不要虐主，不要强加恋爱线。"></textarea></details>
+        <details id="writingPreferences"><summary>写法与节奏（长期设置）</summary><label for="writingPreference">以后默认怎样写？</label><textarea id="writingPreference" rows="3" placeholder="例如：语言白话、多一些对白、少一些环境描写。"></textarea></details>
         <details id="extraPreferences"><summary>心理期待：想从故事中得到什么？（可选）</summary>
         <div id="questions"></div>
         <label for="profileSummary">你的偏好摘要（可以直接修改）</label>
@@ -35,9 +35,8 @@
         <textarea id="selfSummary" rows="5" maxlength="1000" placeholder="例如：平时先观察，遇到在乎的人被欺负时会主动站出来。"></textarea>
         </details>
         <p><label><input id="profileEnabled" type="checkbox" checked> 将心理期待与代入人设用于故事生成</label></p>
-        <div class="reader-actions"><button class="reader-primary" type="submit">保存偏好</button><button class="reader-secondary" id="clearProfile" type="button">清除偏好</button></div>
+        <div class="preference-savebar"><p id="profileStatus" role="status"></p><div class="reader-actions"><button class="reader-primary" type="submit">保存偏好</button><button class="reader-secondary" id="clearProfile" type="button">清除长期偏好</button></div><p class="reader-note">清除长期偏好会重置姓名、性别和口味，保留首页剧情想法、草稿和作品。</p></div>
     </form>
-    <p id="profileStatus" role="status"></p>
 </main>
 <script src="scripts/reader-preferences.js"></script>
 <script>
@@ -54,14 +53,22 @@ for (const [name, caption, tabId, panelId] of genreModes) {
     const panel = document.createElement('div');
     panel.id = panelId; panel.className = 'genre-panel'; panel.hidden = name !== 'genreTag';
     panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', tabId);
-    JimoPreferences.tagGroups.forEach(([title, choices]) => {
+    const category = document.createElement('select');
+    category.setAttribute('aria-label', caption + '：跳到分类');
+    category.append(new Option('跳到题材分类…', ''));
+    category.onchange = () => { if (category.value) document.getElementById(category.value).scrollIntoView({ block: 'start' }); };
+    panel.append(category);
+    JimoPreferences.tagGroups.forEach(([title, choices], index) => {
         const group = document.createElement('section'), heading = document.createElement('h2'), chips = document.createElement('div');
+        group.id = panelId + '-group-' + index;
+        category.append(new Option(title, group.id));
         group.className = 'genre-group'; heading.textContent = title; chips.className = 'genre-chips';
         choices.forEach(tag => {
             const label = document.createElement('label'), input = document.createElement('input');
             input.type = 'checkbox'; input.name = name; input.value = tag;
             input.checked = name === 'excludedGenreTag' ? !!saved?.excludedTags?.includes(tag) : !!saved?.tags?.includes(tag) && !saved?.excludedTags?.includes(tag);
             input.setAttribute('aria-label', caption + '：' + tag);
+            label.title = input.title = name === 'genreTag' ? JimoPreferences.tagExpectations[tag] : '不想出现“' + tag + '”相关内容';
             label.append(input, document.createTextNode(tag)); chips.append(label);
         });
         group.append(heading, chips); panel.append(group);
@@ -70,6 +77,7 @@ for (const [name, caption, tabId, panelId] of genreModes) {
     document.getElementById(tabId).addEventListener('click', () => switchGenreMode(tabId));
 }
 function switchGenreMode(activeId) {
+    document.getElementById('exclusionPreferences').hidden = activeId !== 'excludedGenreTab';
     for (const [, , tabId, panelId] of genreModes) {
         const active = tabId === activeId, tab = document.getElementById(tabId);
         tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1;
@@ -162,6 +170,8 @@ host.addEventListener('change', updateSummary);
 host.addEventListener('input', updateSummary);
 document.getElementById('profileForm').onsubmit = event => {
     event.preventDefault();
+    try { localStorage.setItem('user_preference', document.getElementById('writingPreference').value.trim()); }
+    catch { status.textContent = '写法未能保存，请重试。'; return; }
     status.textContent = JimoPreferences.save({ ...(JimoPreferences.load() || {}), playerName: document.getElementById('playerName').value, playerGender: document.getElementById('playerGender').value, answers: currentAnswers(), customAnswers: customAnswers(),
         tags: [...tagHost.querySelectorAll('input[name=genreTag]:checked')].map(input => input.value),
         excludedTags: [...tagHost.querySelectorAll('input[name=excludedGenreTag]:checked')].map(input => input.value),
@@ -169,13 +179,23 @@ document.getElementById('profileForm').onsubmit = event => {
         storyEnabled: !!(tagHost.querySelector('input:checked') || document.getElementById('excludedPreference').value.trim() || JimoPreferences.load()?.generalPreference),
         selfAnswers: selfAnswers(), selfCustomAnswers: selfCustomAnswers(), selfSummary: selfSummary.value.trim(),
         summary: summary.value.trim(), enabled: document.getElementById('profileEnabled').checked }) ? '已保存到本机；返回即可开始故事。已有故事需主动应用才会改变偏好。' : '未能保存到本机，请重试。';
+    if (new URLSearchParams(location.search).get('from') === 'story' && !status.textContent.includes('未能')) {
+        document.getElementById('profileReturn').href = 'story.html?applyPreferences=1';
+        document.getElementById('profileReturn').textContent = '← 返回故事并应用长期偏好（仅后续剧情）';
+    }
 };
 document.getElementById('clearProfile').onclick = () => {
     try {
-        localStorage.removeItem(JimoPreferences.key);
-        localStorage.removeItem('reader_story_draft_v1');
+        const idea = JimoPreferences.load()?.generalPreference || '';
+        if (!JimoPreferences.save({ generalPreference: idea, storyEnabled: !!idea, enabled: false, playerName: '', playerGender: '' })) throw new Error('未能保存');
+        localStorage.removeItem('user_preference');
+        try {
+            const draft = JSON.parse(localStorage.getItem('reader_story_draft_v1'));
+            if (draft) localStorage.setItem('reader_story_draft_v1', JSON.stringify({ ...draft, baseUpdatedAt: JimoPreferences.load().updatedAt }));
+        } catch { /* Keep an unreadable draft unchanged. */ }
         document.getElementById('profileForm').reset(); summary.value = ''; changedSummary = false;
         document.getElementById('excludedPreference').value = '';
+        document.getElementById('writingPreference').value = '';
         tagHost.querySelectorAll('input').forEach(input => { input.checked = false; });
         switchGenreMode('wantedGenreTab'); updateGenreCounts();
         document.getElementById('playerName').value = '';
@@ -185,10 +205,13 @@ document.getElementById('clearProfile').onclick = () => {
         selfHost.querySelectorAll('textarea').forEach(input => { input.value = ''; input.hidden = true; });
         selfSummary.value = ''; changedSelfSummary = false;
         host.querySelectorAll('textarea').forEach(input => { input.value = ''; input.hidden = true; });
-        status.textContent = '偏好已清除，作品保留。';
+        status.textContent = '长期偏好已清除，剧情想法、草稿和作品保留。';
     }
     catch { status.textContent = '未能清除，请重试。'; }
 };
 if (new URLSearchParams(location.search).get('from') === 'story') document.getElementById('profileReturn').href = 'story.html';
+document.getElementById('writingPreference').value = localStorage.getItem('user_preference') || '';
+document.getElementById('profileForm').addEventListener('input', () => { status.textContent = '有未保存的修改。'; });
+document.getElementById('profileForm').addEventListener('change', () => { status.textContent = '有未保存的修改。'; });
 </script>
 </body></html>
