@@ -2,7 +2,7 @@
 
 **所想，即成文。**
 
-本仓库用于私有开发。对外发布与使用请访问 [Mind2Real-AI-Novel](https://github.com/BoyaOceane/Mind2Real-AI-Novel)。
+下载体验包请访问 [GitHub Releases](https://github.com/BoyaOceane/Mind2Real-AI-Novel/releases)。选择适合系统的 ZIP，完整解压后按包内说明启动，再填写自己的 API Key。
 
 写你想看的故事。
 
@@ -36,13 +36,13 @@
 
 ### 1. 下载并启动
 
-在 [GitHub 仓库](https://github.com/BoyaOceane/Mind2Real) 点击 **Code → Download ZIP**，解压后在包含 `index.html` 的目录打开终端。
+在 [GitHub 仓库](https://github.com/BoyaOceane/Mind2Real-AI-Novel) 点击 **Code → Download ZIP**，解压后在包含 `index.html` 的目录打开终端。
 
 已安装 Git 的用户也可以下载 `main` 分支：
 
 ```powershell
-git clone --branch main https://github.com/BoyaOceane/Mind2Real.git
-cd Mind2Real
+git clone --branch main https://github.com/BoyaOceane/Mind2Real-AI-Novel.git
+cd Mind2Real-AI-Novel
 ```
 
 在项目目录启动本地服务：
