@@ -1,4 +1,4 @@
-# 即文 · Mind2Real — AI小说生成器与同人创作工具
+# 即文 · Mind2Real — 把想法写成自己想看的故事
 
 **所想，即成文。**
 
@@ -6,15 +6,13 @@
 
 写你想看的故事。
 
-**即文（Mind2Real）是面向 PC 浏览器的 AI 小说生成器，帮助读者和创作者把剧情想法写成专属爽文，支持同人创作，也能随用户选择继续发展故事。**
+**即文（Mind2Real）是面向 PC 浏览器的 AI 小说生成器，帮助你延伸自己的剧情想法，写出自己想看的专属故事。你决定主线和期待的爽点，AI补足场面、对白与过程，故事也会随你的选择继续发展。**
 
 有没有一本小说，题材、人设、关系和爽点都刚好合你的心意？
 
 在「即文」，你把想法说出来，AI帮你把它写成能一路追下去的专属爽文。想在喜欢的游戏世界里冒险，想和熟悉的角色并肩，想经营自己的小店，或者只想痛痛快快地赢一次——故事从你的愿望开始。
 
 > 你决定想看什么，AI补足场面与过程。每一次选择，都可以让故事走向更合你心意的方向。
-
-项目原名「即墨（Jimo）」，当前优先支持 PC 浏览器。
 
 ## 你说想看什么，故事就从哪里开始
 
@@ -26,9 +24,17 @@
 
 剧情想法与阅读偏好共同影响生成；两者冲突时，剧情想法优先，未冲突的偏好继续生效。清空想法后，新生成不再使用旧想法，恢复按阅读偏好随机准备。阅读过程中也能更新想法，影响后续内容，已有剧情不会被悄悄重写。
 
-## 支持同人创作
+## 一个想法，可以延伸出不同玩法
 
-输入喜欢的作品名，再说说你想看的剧情，就能开始创作自己的同人故事。
+想看升级逆袭、经营日常，或者改写一个熟悉世界里的经历，都可以从一句想法开始。
+
+原创剧情可以这样写：
+
+> 我想看修仙爽文，开局天赋满级，一路升级逆袭。
+
+**同人故事也是其中一种玩法。** 以喜欢的作品为背景，描述你想体验的经历，让自己的想法在那个世界里继续展开。例如：
+
+> 《游戏名》，穿越到游戏世界与各个角色展开冒险。
 
 ## 如何使用即文：从下载到读到第一段故事
 
@@ -73,15 +79,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 
 在首页 **“这次想看什么”** 中写下题材、主角想做什么、想体验的关系或爽点，然后点击 **“生成简介”**。
 
-原创剧情可以这样描述：
-
-> 我想看修仙爽文，开局天赋满级，一路升级逆袭。
-
-同人剧情可以这样描述：
-
-> 《游戏名》，穿越到游戏世界与各个角色展开冒险。
-
-作品和剧情都可以换成自己喜欢的。不知道从哪里开始，也可以留空，让它随机准备一个世界与身份。
+可以参考上面的玩法示例，换成自己想看的题材与经历。不知道从哪里开始，也可以留空，让它随机准备一个世界与身份。
 
 ### 4. 进入故事，决定下一步
 
@@ -105,11 +103,11 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 
 ### 即文适合谁？
 
-想读符合自己口味的个性化爽文、想用轻松方式延伸剧情想法、想在熟悉的原作世界中体验同人故事的人。用户决定主线与关键爽点，AI辅助扩展动作、对白与过程。
+想读符合自己口味的故事，或想用轻松方式延伸自己想法的人。用户决定主线与关键爽点，AI辅助扩展动作、对白与过程。
 
-### 能创作原创小说和同人小说吗？
+### 可以怎么玩？
 
-支持原创小说和同人创作。描述想看的剧情，或填写喜欢的作品名，就可以开始。
+把一个原创点子写成故事、体验自己想要的人生、经营一间小店，或以熟悉的作品为背景延伸出同人故事。它们都是“写自己想看的故事”的不同玩法。
 
 ### 是免费在线小说网站吗？
 
@@ -117,7 +115,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 
 ### English overview
 
-**Mind2Real (即文) is a browser-based AI story generator for personalized fiction and fanfiction.** Users describe the story they want to read, preview a title and synopsis, and continue through short immersive episodes or their own choices. It supports fanfiction, runs locally, and uses a user-provided DeepSeek API key.
+**Mind2Real (即文) is a browser-based AI story generator that expands your ideas into stories you want to read.** You guide the premise and direction; AI fills in scenes, dialogue, and details. Preview a title and synopsis, then continue through short immersive episodes and your own choices. Exploring a familiar fictional world through a fan story is one possible way to use it. Mind2Real runs locally and uses a user-provided DeepSeek API key.
 
 ## 小说存在哪里？
 
