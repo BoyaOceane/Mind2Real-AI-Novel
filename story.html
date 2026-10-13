@@ -1268,6 +1268,7 @@
     </div>
     <div id="readerMenu" class="reader-menu" hidden>
         <button class="top-btn" onclick="closeReaderPanel()">关闭菜单 ×</button>
+        <button class="top-btn" id="openStoryGuide" onclick="JimoGuide.open()">使用说明</button>
         <button class="top-btn" onclick="openStoryInfo()">故事资料</button>
         <label>字号 <select id="readerFont" onchange="setReaderFont(this.value)"><option>16</option><option selected>18</option><option>20</option><option>22</option><option>24</option></select></label>
         <a href="profile.html?from=story">我的阅读偏好</a>
@@ -3285,5 +3286,6 @@ relations仅引用本次characters的ID或protagonist。只提取已发生事实
         // Init
         init();
     </script>
+    <script src="scripts/reader-guide.js"></script>
 </body>
 </html>

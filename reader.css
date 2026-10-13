@@ -131,3 +131,14 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .api-panel .reader-note { line-height: 1.7; }
 .api-panel #apiSetupStatus { min-height: 36px; color: var(--ink-heavy); }
 .api-panel { max-height: calc(100vh - 80px); overflow-y: auto; }
+.quickstart-guide { box-sizing: border-box; margin: auto; width: min(620px, calc(100vw - 40px)); max-height: calc(100vh - 60px); padding: 24px 30px; overflow-y: auto; border: 1px solid #cfc8bc; border-radius: 12px; background: #fffaf2; color: #302b25; font-family: inherit; }
+.quickstart-guide::backdrop { background: rgb(35 30 25 / 45%); }
+.quickstart-guide h2 { font-size: 24px; margin: 12px 0 20px; }
+.quickstart-guide h3 { margin: 0 0 6px; font-size: 17px; }
+.quickstart-guide ol { padding-left: 22px; }
+.quickstart-guide li { padding-left: 4px; margin-bottom: 18px; }
+.quickstart-guide p { line-height: 1.75; margin: 6px 0; }
+.quickstart-guide .reader-note { font-size: 13px; color: #766e63; }
+.quickstart-guide summary { cursor: pointer; padding: 10px 0; }
+.quickstart-guide button { min-height: 44px; }
+.quickstart-guide .reader-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
