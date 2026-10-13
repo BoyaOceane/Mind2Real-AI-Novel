@@ -13,7 +13,7 @@ globalThis.JimoGuide = (() => {
           <li><h3>开始阅读，随时决定下一步</h3><p>喜欢书名和简介，就点“开始阅读”。“继续看”续写故事，“改走向”让你选择行动或说出想法。姓名、阅读偏好和测评都可以以后再填。</p></li>
         </ol>
         <p class="reader-note">生成使用你自己的 API 账户，按官方规则收费；体验包不附赠 Key 或额度。启动窗口请保持打开。</p>
-        <details><summary>保存、升级和启动问题</summary><p>小说、偏好和 Key 保存在当前浏览器，不在体验包里。升级前用“更多 → 创作工具”备份 JSON，保持原浏览器及 localhost:8080。运行环境缺失时，双击包内“修复运行环境”；生成失败按页面提示检查 Key、账户余额或网络。</p></details>
+        <details><summary>保存、升级和启动问题</summary><p>小说、偏好和 Key 保存在当前浏览器，不在体验包里。升级前用“更多 → 导出与备份”备份 JSON，保持原浏览器及 localhost:8080。运行环境缺失时，双击包内“修复运行环境”；生成失败按页面提示检查 Key、账户余额或网络。</p></details>
         <p class="reader-note">以后可从首页“使用说明”或阅读页“更多 → 使用说明”，随时重新打开这份指南。</p>
         <div class="reader-actions"><button type="button" class="reader-primary" id="guideOpenApi">去设置 API Key</button><button type="button" class="reader-secondary" data-guide-close>先看看</button></div>`;
     document.body.append(guide);
