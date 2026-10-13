@@ -125,7 +125,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 
 ## 项目文件
 
-本仓库是即文的公开发布仓库，只维护 `main` 分支。
+公开发布仓库为 [Mind2Real-AI-Novel](https://github.com/BoyaOceane/Mind2Real-AI-Novel)，只维护 `main` 分支。
 
 | 页面 | 用途 |
 |---|---|
