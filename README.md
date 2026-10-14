@@ -2,7 +2,7 @@
 
 **所想，即成文。**
 
-下载体验包请访问 [GitHub Releases](https://github.com/BoyaOceane/Mind2Real-AI-Novel/releases)。选择适合系统的 ZIP，完整解压后按包内说明启动，再填写自己的 API Key。
+下载 [项目源码](https://github.com/BoyaOceane/Mind2Real-AI-Novel)，使用 Python 3 启动本地服务，再填写自己的 DeepSeek API Key。当前不提供内置运行环境的体验包。
 
 写你想看的故事。
 
@@ -38,21 +38,9 @@
 
 ## 如何使用即文：从下载到读到第一段故事
 
-推荐下载[开箱体验包](https://github.com/BoyaOceane/Mind2Real-AI-Novel/releases/latest)：只需 PC 浏览器和自己的 DeepSeek API Key，无需安装 Python、Node.js 或前端依赖。
-
-| 电脑 | 选择的附件 | 解压后启动 |
-|---|---|---|
-| Windows 10/11，Intel/AMD 64位 | Windows-x64 ZIP | 双击“启动即文.cmd” |
-| Mac，Apple芯片（M系列） | macOS-arm64 ZIP | 双击“启动即文.command” |
-| Mac，Intel芯片 | macOS-x64 ZIP | 双击“启动即文.command” |
-
-**完整解压后再启动，保留启动窗口。** 包内运行环境已备齐，启动器会自检；如提示缺失或损坏，双击“修复运行环境”文件，自动下载并校验官方运行时，只修复当前包，不改系统环境。修复需要联网。Mac首次打开的安全提示见包内说明。
+准备 **Python 3、PC 浏览器和自己的 DeepSeek API Key**。项目是纯 HTML/CSS/JavaScript，无需安装 Node.js 或前端依赖。尚未安装 Python 时，请从 [Python 官方网站](https://www.python.org/downloads/) 安装。
 
 ### 1. 下载并启动
-
-普通用户按上表启动后，浏览器会打开 **http://localhost:8080**，继续下面第2步。GitHub的“Source code”附件和“Code → Download ZIP”是源码，不是体验包。
-
-**仅源码运行需要 Python 3。** 以下是开发者或源码用户的启动方式：
 
 在 [GitHub 仓库](https://github.com/BoyaOceane/Mind2Real-AI-Novel) 点击 **Code → Download ZIP**，解压后在包含 `index.html` 的目录打开终端。
 
@@ -66,10 +54,10 @@ cd Mind2Real-AI-Novel
 在项目目录启动本地服务：
 
 ```powershell
-python -m http.server 8080
+python -m http.server 8080 --bind 127.0.0.1
 ```
 
-Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Linux 通常使用 `python3 -m http.server 8080`。保持终端运行，浏览器打开 **http://localhost:8080**。请通过这个地址访问，不要直接双击 HTML 文件。
+Windows 若找不到 `python`，可尝试 `py -m http.server 8080 --bind 127.0.0.1`；macOS / Linux 通常使用 `python3 -m http.server 8080 --bind 127.0.0.1`。保持终端运行，手动在浏览器打开 **http://localhost:8080**。请通过这个地址访问，不要直接双击 HTML 文件。结束使用时在终端按 `Ctrl+C` 停止服务。
 
 ### 2. 设置模型
 
@@ -98,7 +86,7 @@ Windows 若找不到 `python`，可尝试 `py -m http.server 8080`；macOS / Lin
 ### 常见启动问题
 
 - 页面打不开：确认服务终端仍在运行，并访问 `http://localhost:8080`。
-- 8080端口被占用：改用 `python -m http.server 8081`，再访问 `http://localhost:8081`。地址改变会使用另一份浏览器存储，旧小说请从原地址备份后导入。
+- 8080端口被占用：改用 `python -m http.server 8081 --bind 127.0.0.1`，再访问 `http://localhost:8081`。地址改变会使用另一份浏览器存储，旧小说请从原地址备份后导入。
 - 模型没有回应：检查 API Key、账户可用额度、网络与模型设置；保留草稿后重试。API调用是否成功与小说文笔是否合意需要分别判断。
 
 ## 关于这款AI小说工具
