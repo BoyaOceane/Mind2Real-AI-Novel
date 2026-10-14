@@ -30,6 +30,8 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .reader-identity { display: flex; align-items: flex-end; gap: 20px; margin: 30px 0 8px; }
 .reader-name input, .reader-name select { display: block; width: 270px; max-width: 100%; padding: 12px 14px; margin-top: 10px; border: 1px solid #cfc8bc; border-radius: 8px; background: #fffaf2; font: inherit; color: inherit; }
 .reader-name select { width: 140px; }
+.home-idea .reader-identity { flex-direction: column; align-items: stretch; gap: 12px; margin: 14px 0 4px; }
+.home-idea .reader-name input, .home-idea .reader-name select { width: 100%; }
 .reader-primary { border: 0; border-radius: 8px; background: var(--reader-ink); color: #fffaf2; padding: 14px 30px; cursor: pointer; min-height: 48px; }
 .reader-secondary { border: 1px solid #cfc8bc; border-radius: 8px; background: transparent; color: var(--reader-ink); padding: 12px 20px; cursor: pointer; min-height: 44px; }
 .reader-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 22px 0 12px; }
@@ -142,3 +144,16 @@ button, a, input, textarea, select { outline-offset: 4px; }
 .quickstart-guide summary { cursor: pointer; padding: 10px 0; }
 .quickstart-guide button { min-height: 44px; }
 .quickstart-guide .reader-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.guided-start { position: fixed; bottom: 24px; right: 24px; z-index: 1100; box-sizing: border-box; width: min(350px, calc(100vw - 48px)); padding: 18px; border: 2px solid #946346; border-radius: 12px; background: #fffaf2; color: #302b25; box-shadow: 0 8px 28px #302b2526; }
+.guided-start[hidden] { display: none; }
+.guided-start p { line-height: 1.7; margin: 10px 0; }
+.guided-start button { min-height: 44px; }
+.guide-progress { font-weight: bold; }
+.guide-target { outline: 3px solid #aa7150; outline-offset: 5px; }
+.guided-start[data-step="idea"] { left: 24px; right: auto; }
+body > .guided-start[data-step="api"] { top: 76px; bottom: auto; right: 24px; }
+#apiPanelOverlay .guided-start { position: static; width: auto; margin-top: 16px; }
+
+.guide-navigation { display: flex; gap: 10px; margin: 12px 0; }
+.guide-navigation button { flex: 1; }
+.guide-navigation button:disabled { opacity: .45; cursor: default; }

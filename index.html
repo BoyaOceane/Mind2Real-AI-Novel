@@ -705,7 +705,10 @@
   <aside class="home-idea" aria-labelledby="storyIdeaTitle">
     <h2 id="storyIdeaTitle">这次想看什么？</h2>
     <p class="reader-note">写下你想体验的故事，AI帮你把想法展开成专属小说。人物与剧情接得上，你随时可以决定下一步。</p>
-    <p class="reader-note">剧情想法与阅读偏好一起生效：想法决定主线，偏好补充口味、避雷与写法；冲突时优先按剧情想法，包括与长期避雷冲突的部分；其余偏好仍有效。清空想法后，只按阅读偏好生成，不会修改已保存的偏好。</p>
+    <div class="reader-identity">
+      <label class="reader-name">故事里怎么称呼你？（可留空）<input id="playerName" maxlength="20" placeholder="留空时用“你”称呼" autocomplete="off"></label>
+      <label class="reader-name">主角性别（可选）<select id="playerGender"><option value="">不限定</option><option value="男">男</option><option value="女">女</option></select></label>
+    </div>
     <form id="storyIdeaForm">
       <label for="generalPreference">这次的剧情想法（可选）</label>
       <textarea id="generalPreference" rows="4" maxlength="1200" placeholder="例如：星际维修工靠修好废弃机甲翻身，军方争着请我出山。轻松嘴贫，爽得干脆。"></textarea>
@@ -994,6 +997,7 @@ function saveApiKey(generate = true) {
   } catch { JimoSetup.status('浏览器未能保存设置，请检查是否禁用了网站存储。你的输入仍在。'); return; }
   showToast('API Key 和模型已保存');
   JimoSetup.changed();
+  if (globalThis.JimoGuide?.apiSaved()) { closeApi(); document.getElementById('generalPreference').focus(); return; }
   if (generate && !JimoHomeIdea.apply()) return;
   if (generate) setTimeout(() => rollWorld(), 0);
   closeApi();

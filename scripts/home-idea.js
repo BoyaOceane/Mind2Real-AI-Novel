@@ -18,6 +18,21 @@
         catch { status.textContent = '草稿未能保存到本机，请勿刷新；仍可尝试生成。'; }
     }
     mainline.addEventListener('input', changed);
+    const identityName = document.getElementById('playerName');
+    const identityGender = document.getElementById('playerGender');
+    identityName.value = JimoPreferences.playerName();
+    identityGender.value = JimoPreferences.playerGender();
+    function saveIdentity() {
+        const latest = JimoPreferences.load();
+        if (!JimoPreferences.save({ ...(latest || {}), playerName: identityName.value, playerGender: identityGender.value, enabled: latest?.enabled ?? true })) {
+            status.textContent = '姓名／性别未能保存，请检查本机存储后重试。';
+            return;
+        }
+        stored = JimoPreferences.load();
+        status.textContent = '姓名／性别已保存。';
+    }
+    identityName.addEventListener('change', saveIdentity);
+    identityGender.addEventListener('change', saveIdentity);
     function clearIdea() {
         const latest = JimoPreferences.load();
         if (!JimoPreferences.save({ ...(latest || {}), generalPreference: '', storyEnabled: true, enabled: latest?.enabled ?? true })) {

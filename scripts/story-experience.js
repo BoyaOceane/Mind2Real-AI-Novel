@@ -6,6 +6,9 @@ let metadataRequest = 0;
 let recoveryTimer = null;
 const helperControllers = {};
 const helperStates = { profile: '', metadata: '' };
+let metadataSync = null;
+let metadataSyncVersion = null;
+let metadataPending = false;
 
 function setHelperStatus(kind, message) {
     helperStates[kind] = message;
@@ -20,17 +23,17 @@ function helperSignal(kind) {
 }
 
 function storyVersion() { return `${currentStory.storyId}:${currentStory.contentVersion || 0}`; }
-function invalidateStoryTasks() {
-    currentStory.contentVersion = (currentStory.contentVersion || 0) + 1;
+function invalidateStoryTasks(contentChanged = true) {
+    if (contentChanged) currentStory.contentVersion = (currentStory.contentVersion || 0) + 1;
     optionRequest++;
     profileRequest++;
-    metadataRequest++;
-    Object.values(helperControllers).forEach(controller => controller.abort());
+    if (contentChanged) metadataRequest++;
+    Object.entries(helperControllers).forEach(([kind, controller]) => { if (contentChanged || kind !== 'metadata') controller.abort(); });
     clearBranches();
     clearOptions();
     document.getElementById('btnRefresh').disabled = isLoading || !!currentStory.draft;
     setHelperStatus('profile', '');
-    setHelperStatus('metadata', '');
+    if (contentChanged) setHelperStatus('metadata', '');
 }
 function storageNotice(ok) {
     document.getElementById('saveStatus').classList.toggle('save-failed', !ok);
@@ -131,11 +134,36 @@ function commitGeneration(draft, content, reasoning) {
     autoSave();
     updateLatestButton();
 }
-function refreshStoryHelpers() { void extractMetadata(); }
+function refreshStoryHelpers() { return syncStoryMetadata(); }
+function syncStoryMetadata() {
+    if (metadataSync) {
+        if (metadataSyncVersion !== storyVersion()) metadataPending = true;
+        return metadataSync;
+    }
+    const syncButton = document.getElementById('syncStoryInfo');
+    if (syncButton) syncButton.disabled = true;
+    metadataSync = (async () => {
+        try {
+            do {
+                metadataPending = false;
+                metadataSyncVersion = storyVersion();
+                await extractMetadata();
+            } while (metadataPending);
+        } catch { setHelperStatus('metadata', '资料更新失败，可重试；正文已保存'); }
+        finally { if (syncButton) syncButton.disabled = false; }
+    })().finally(() => { metadataSync = null; metadataSyncVersion = null; });
+    return metadataSync;
+}
+function resumeStoryMetadata() {
+    if (!getApiConfig().apiKey || currentStory.draft || !currentStory.history.length ||
+        currentStory.metadataProcessedVersion === (currentStory.contentVersion || 0) ||
+        helperStates.metadata === '正在同步资料…') return;
+    refreshStoryHelpers();
+}
 async function runStoryGeneration(prompt, systemPrompt, action, kind, thinking, retry = null) {
     if (isLoading) return;
     if (!getApiConfig().apiKey) { showToast('请先填写 API Key'); toggleApiPanel(); return; }
-    invalidateStoryTasks();
+    invalidateStoryTasks(false);
     const draft = retry || {
         id: crypto.randomUUID(), kind, action, prompt, systemPrompt, thinking,
         baseLength: currentStory.history.length, content: '', reasoning: ''
@@ -178,8 +206,8 @@ async function runStoryGeneration(prompt, systemPrompt, action, kind, thinking, 
         clearTimeout(slow);
         activeGeneration = null;
         setLoadingState(false);
+        if (!currentStory.draft) void refreshStoryHelpers();
     }
-    if (!currentStory.draft) refreshStoryHelpers();
 }
 function retryDraft() {
     const draft = currentStory.draft;
@@ -187,14 +215,14 @@ function retryDraft() {
     if (draft.needsCanon) draft.prompt = readerPrompt(draft.action, draft.kind === 'opening');
     void runStoryGeneration(draft.prompt, draft.systemPrompt, draft.action, draft.kind, draft.thinking, draft);
 }
-function acceptDraft() {
+async function acceptDraft() {
     if (isLoading || !currentStory.draft?.content?.trim()) return;
     try {
         const draft = currentStory.draft;
         draft.acceptedPartial = true;
         commitGeneration(draft, draft.content, draft.reasoning);
         setLoadingState(false);
-        refreshStoryHelpers();
+        void refreshStoryHelpers();
     } catch (e) { showToast(e.message); renderDraft(); }
 }
 async function prepareOptions() {

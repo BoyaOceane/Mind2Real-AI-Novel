@@ -24,5 +24,12 @@ window.JimoCharacters = (() => {
         dimensions[dimension] = [...new Set([...(dimensions[dimension] || []), ...labels])];
     }
     for (const dimension of ['身份经历', '表层欲望', '深层需求', '能力', '缺陷', '资源限制', '关系方式', '行为习惯', '说话习惯', '自定义设定']) dimensions[dimension] = [];
-    return { dimensions };
+    const frameworks = { '中式': protagonistChineseDims, '欧式': protagonistWesternDims };
+    const requirements = {
+        '中式': Object.fromEntries(Object.keys(protagonistChineseDims).map(key => [key, { min: 1, max: 1 }])),
+        '欧式': Object.fromEntries(Object.keys(protagonistWesternDims).map(key => [key, {
+            min: key === '创伤印记' ? 0 : 1, max: ['性格内核', '创伤印记'].includes(key) ? 2 : 1
+        }]))
+    };
+    return { dimensions, frameworks, requirements };
 })();

@@ -1371,8 +1371,8 @@
                 <button class="s-tab" data-tab="characters" onclick="switchTab('characters')">人物</button>
                 <button class="s-tab" data-tab="profile" onclick="switchTab('profile')" hidden>历史画像</button>
             </div>
-            <div class="sidebar-body" id="sidebarBody"><p id="memoryStatus" role="status"></p>
-                <div class="sb-pane active" id="sbState"><button class="top-btn" onclick="refreshStoryHelpers()">更新资料</button><div class="sb-list" id="stateList"></div></div>
+            <div class="sidebar-body" id="sidebarBody"><p id="memoryStatus" role="status"></p><button id="syncStoryInfo" class="top-btn" style="min-height:44px" onclick="refreshStoryHelpers()">同步资料</button>
+                <div class="sb-pane active" id="sbState"><div class="sb-list" id="stateList"></div></div>
                 <div class="sb-pane" id="sbOutline"><div class="sb-list" id="outlineList"></div></div>
                 <div class="sb-pane" id="sbClues"><div class="sb-list" id="cluesList"></div></div>
                 <div class="sb-pane" id="sbChars"><div class="sb-list" id="charsList"></div></div>
@@ -1411,13 +1411,13 @@
     <div id="toast" class="toast" aria-live="polite"></div>
 
     <script src="scripts/stream.js"></script>
-    <script src="scripts/character-traits.js"></script>
-    <script src="scripts/fiction.js"></script>
+    <script src="scripts/character-traits.js?v=20261014-parallel-sync"></script>
+    <script src="scripts/fiction.js?v=20261014-dialogue-intent"></script>
     <script src="scripts/reader-preferences.js"></script>
-    <script src="scripts/story-memory.js"></script>
-    <script src="scripts/reader-story.js"></script>
+    <script src="scripts/story-memory.js?v=20261014-parallel-sync"></script>
+    <script src="scripts/reader-story.js?v=20261014-parallel-sync"></script>
     <script src="scripts/reader-dialogs.js"></script>
-    <script src="scripts/story-experience.js"></script>
+    <script src="scripts/story-experience.js?v=20261014-parallel-sync"></script>
     <script>
         // Global state
         let currentStory = {
@@ -1835,12 +1835,13 @@
 
             renderStyleProfile();
             saveStoryData();
+            resumeStoryMetadata();
         }
 
         // Generate opening
         async function generateOpening() {
             if (isLoading || currentStory.draft || isLegacyNovel()) return;
-            await runStoryGeneration(readerPrompt('', true), renderPrompt(JimoFiction.storySystem(), { worldTitle: currentStory.worldTitle, worldDesc: currentStory.worldDesc || '', protagonist: currentStory.protagonist, goldenFinger: currentStory.goldenFinger || '无', pov: getPovName() }), '', 'opening', false);
+            await runStoryGeneration(readerPrompt('', true), renderPrompt(JimoFiction.storySystem(currentStory), { worldTitle: currentStory.worldTitle, worldDesc: currentStory.worldDesc || '', protagonist: currentStory.protagonist, goldenFinger: currentStory.goldenFinger || '无', pov: getPovName() }), '', 'opening', false);
         }
 
         function textToHtml(content) {
@@ -2546,7 +2547,7 @@ JSON 结构：
             if (isLoading || currentStory.draft || isLegacyNovel()) return;
             document.body.classList.remove('show-direction');
             document.getElementById('btnDirection').setAttribute('aria-expanded', 'false');
-            await runStoryGeneration(readerPrompt(direction), renderPrompt(JimoFiction.storySystem(), { worldTitle: currentStory.worldTitle, worldDesc: currentStory.worldDesc || '', protagonist: currentStory.protagonist, goldenFinger: currentStory.goldenFinger || '无', pov: getPovName() }), direction, 'continue', false);
+            await runStoryGeneration(readerPrompt(direction), renderPrompt(JimoFiction.storySystem(currentStory), { worldTitle: currentStory.worldTitle, worldDesc: currentStory.worldDesc || '', protagonist: currentStory.protagonist, goldenFinger: currentStory.goldenFinger || '无', pov: getPovName() }), direction, 'continue', false);
         }
 
         function autoSave() {
@@ -2924,7 +2925,7 @@ JSON 结构：
             const fullStory = currentStory.history.map((h, i) => `[段${i + 1}]\n${h.content}`).join('\n\n');
             const personas = JimoMemory.personas(currentStory);
             if (!fullStory.trim()) return;
-            setHelperStatus('metadata', '故事资料更新中，仍可继续阅读');
+            setHelperStatus('metadata', '正在同步资料…');
 
             const systemPrompt = `你是一位专业的故事分析员。按完整正文重建当前资料快照，只输出合法JSON。
 格式：
@@ -2932,34 +2933,38 @@ JSON 结构：
   "state": [{"kind":"能力|资源|目标|地位", "name":"状态名", "desc":"当前情况与已设边界", "_seg":0, "evidence":"该段原文短句"}],
   "outline": [{"type":"转折|高潮|悬念|铺垫|揭示", "importance":"critical|major|normal", "summary":"重要事件简述", "_seg":0, "evidence":"该段原文短句"}],
   "clues": [{"kind":"线索|承诺|待兑现回报", "name":"名称", "stateChange":"未解决|推进中|已兑现|已解决", "desc":"事实与当前进度", "importance":"major|normal", "_seg":0, "evidence":"该段原文短句"}],
-  "characters": [{"id":"角色ID", "name":"正文中的人物名", "tag":"主角|配角|反派|中立", "desc":"已知身份和当前关系", "goal":"正文明确的目标", "knowledge":"明确知道什么、还不知道什么", "traits":[{"dimension":"角色维度", "label":"对应标签或简短行为设定", "_seg":0, "evidence":"支持该标签的逐字原文"}], "_seg":0, "evidence":"该段原文短句"}],
+  "characters": [{"id":"角色ID", "name":"正文中的人物名", "tag":"主角|配角|反派|中立", "framework":"中式|欧式", "desc":"已知身份和当前关系", "goal":"正文明确的目标", "knowledge":"明确知道什么、还不知道什么", "traits":[{"dimension":"角色维度", "label":"对应标签或简短行为设定", "_seg":0, "evidence":"支持该标签的逐字原文"}], "_seg":0, "evidence":"该段原文短句"}],
   "relations": [{"source":"角色ID", "target":"角色ID或protagonist", "type":"当前关系", "scene":"形成或改变关系的依据", "_seg":0, "evidence":"该段原文短句"}]
 }
 段编号从0开始：正文标记[段1]对应_seg:0。每条都要有相应段落和逐字原文证据，证据不是推测正确的保证，提取内容必须由正文支持。
 这是完整替换快照，不是新增列表；保留仍有效的早期重要事实和未完成承诺，按后续正文更新，不重复同一事件。outline按时间收录重要已发生事件，clues区分已兑现与未兑现，不将旧收益重新算成奖励。state记录目前可用资源、实力边界、目标与地位，不把潜力当现实力或花掉的钱当余额。
-为已登场的主角与有稳定姓名/称呼的配角、对手保留人物卡，不能因本段未出场就遗漏仍有作用的人物。人物姓名一致，未明确的目标或知情情况留空；不推断创伤/心理，不让不同人共享知识。主角与配角同样整理traits，只选正文明确或充分体现的身份经历、动机、能力、性格、关系、行为与说话习惯，每个标签独立附依据，不用身份证据包办性格推断，不因一次笑/停顿给人贴固定人格，不把随机参考或未来设想当已采用人设。无依据就traits:[]，不强制补齐所有维度；有后续变化按事实更新，保留仍有效的旧标签。
+先按完整正文逐段核对每个出场、说话或参与行动的人物，再整理characters；不只取最新一段、主要人物或已有卡。没有姓名就使用正文已有的稳定称呼或身份（如老技师），不能遗漏有互动的无名角色，也不捏造姓名或把群体拆成虚构个人。为已登场的主角与配角、对手保留人物卡，不能因本段未出场就遗漏仍有作用的人物。人物姓名一致，未明确的目标或知情情况留空；不推断创伤/心理，不让不同人共享知识。主角与配角同样整理traits，只选正文明确或充分体现的身份经历、动机、能力、性格、关系、行为与说话习惯，每个标签独立附依据，不用身份证据包办性格推断，不因一次笑/停顿给人贴固定人格，不把随机参考或未来设想当已采用人设。无依据就traits:[]，不强制补齐所有维度；有后续变化按事实更新，保留仍有效的旧标签。
 固定角色人设：${JSON.stringify(personas)}。已建立维度沿用卡片，不因新正文反常行为改标签；目标完成、当前知情、关系进展和资源按事实更新。未知维度仅在有依据且与固定人设相容时补充，不改卡片来迁就OOC正文。
+新角色的framework记录正文所体现的中式或欧式体系，标准维度与标签仅从该套目录选取，不能混用或改名；已有卡的体系与标签保持不变。新角色须整理其已体现的标准性格/动机/处事标签，不以自由形容词代替标准；证据不足则不补造标签，保持有依据的资料。完整目录：${JSON.stringify(JimoCharacters.frameworks)}。每个板块的数量标准：${JSON.stringify(JimoCharacters.requirements)}。中式七个板块各1个（共7）；欧式性格内核1–2个、内在驱动/关系模式/心理防线/自我认知各1个、创伤印记0–2个（共5–8）。逐角色核对标准，不只返回两个标签；标签须有相容的行为依据，不为补齐数量编造创伤或事实。
 有候选标签的维度使用目录原标签；空候选的维度用简短具体事实，自定义原则的已体现内容用自定义设定。沿用当前角色框架及目录：${JimoFiction.characterSystem(true)}
 relations仅引用本次characters的ID或protagonist。只提取已发生事实，不把简介、未来愿望或想象变成事实，不编数量、关系、能力或未来结局；不明确就不填。五个字段都返回数组，没有就为空数组。`;
 
+            const metadataController = helperControllers.metadata;
+            const timeout = setTimeout(() => metadataController?.abort(), 45000);
             try {
                 const { content } = await callDeepSeek(fullStory, systemPrompt, null, false, 'deepseek-flash', 0.2, signal);
                 if (ticket !== metadataRequest || version !== storyVersion()) return;
                 const meta = JimoMemory.snapshot(parseStyleJson(content), currentStory.history);
-                currentStory.characterPersonas = JimoMemory.establishPersonas(meta.characters, currentStory.history, personas);
+                currentStory.characterPersonas = JimoMemory.completePersonas(meta.characters, currentStory.history, personas);
                 storyOutline = meta.outline;
                 storyClues = meta.clues;
                 characterCards = meta.characters;
                 characterRelations = meta.relations;
                 currentStory.storyState = meta.state;
                 currentStory.metadataProcessedVersion = currentStory.contentVersion || 0;
-                setHelperStatus('metadata', '');
+                const incomplete = currentStory.characterPersonas.some(persona => JimoMemory.missingTraits(persona).length);
+                setHelperStatus('metadata', incomplete ? '资料已同步，部分人物标签待补齐，可点同步资料重试' : '');
                 saveStoryData();
                 autoSave();
                 renderState(); renderOutline(); renderClues(); renderChars(); renderTimeline();
             } catch (e) {
                 if (ticket === metadataRequest && version === storyVersion()) { setHelperStatus('metadata', '资料更新失败，可重试；续写仍沿用角色人设和既有剧情'); renderState(); }
-            }
+            } finally { clearTimeout(timeout); }
         }
 
         function appendNewMeta(result) {
@@ -3079,13 +3084,16 @@ relations仅引用本次characters的ID或protagonist。只提取已发生事实
 
         function renderCharacterDetails(c) {
             if (!c) return '';
-            const traits = JimoMemory.personas(currentStory).find(row => row.id === c.id)?.traits || [];
+            const persona = JimoMemory.personas(currentStory).find(row => row.id === c.id);
+            const traits = persona?.traits || [];
+            const missing = persona ? JimoMemory.missingTraits(persona) : [];
+            const tagStatus = missing.length ? '<div>标准标签待补齐：' + escapeHTML(missing.join('、')) + '</div>' : '';
             const labels = traits.map(row => {
-                const source = currentStory.history[row._seg]?.content.includes(row.evidence) ? memorySource(row) : '<small>建卡依据：' + escapeHTML(row.evidence) + '（原正文已改动）</small>';
+                const source = row.origin === 'creation' ? '<small>同步时补充的角色设定</small>' : currentStory.history[row._seg]?.content.includes(row.evidence) ? memorySource(row) : '<small>建卡依据：' + escapeHTML(row.evidence) + '（原正文已改动）</small>';
                 return '<div class="ch-trait"><span>' + escapeHTML(row.dimension) + '：' + escapeHTML(row.label) + '</span>' + source + '</div>';
             }).join('');
             const source = traits.some(row => row._seg === c._seg) ? '' : memorySource(c);
-            return '<div class="ch-detail">' + escapeHTML(c.desc || '') + (c.goal ? '<br>当前目标：' + escapeHTML(c.goal) : '') + (c.knowledge ? '<br>当前知情：' + escapeHTML(c.knowledge) : '') + (labels ? '<div class="ch-traits">固定角色人设（后续行为以此为准）' + labels + '</div>' : '') + source + '</div>';
+            return '<div class="ch-detail">' + escapeHTML(c.desc || '') + (c.goal ? '<br>当前目标：' + escapeHTML(c.goal) : '') + (c.knowledge ? '<br>当前知情：' + escapeHTML(c.knowledge) : '') + (labels ? '<div class="ch-traits">固定角色人设（后续行为以此为准）' + tagStatus + labels + '</div>' : '') + source + '</div>';
         }
         function renderChars() {
             const list = document.getElementById('charsList');

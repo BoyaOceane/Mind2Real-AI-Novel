@@ -6,14 +6,9 @@
     <a href="index.html" id="profileReturn">← 返回，不用先完成测评</a>
     <p class="reader-eyebrow">即文 · 读懂你的期待</p>
     <h1>我的阅读偏好</h1>
-    <p>设置代入姓名与性别，或了解自己的阅读期待。选好平时的口味与不想看的内容后保存。首页只需描述这次想看的剧情，测评可跳过。</p>
+    <p>了解自己的阅读期待，选好平时的口味与不想看的内容后保存。姓名与性别在首页填写；首页只需描述这次想看的剧情，测评可跳过。</p>
     <p class="reader-note">偏好保存在本机。启用测评时，摘要与代入人设会发送给你配置的模型服务，原始问答记录不发送；标签和排除项与首页剧情想法共同用于新故事；想法决定主线，不会修改这些长期选择。</p>
     <form id="profileForm">
-        <div class="reader-identity">
-            <label class="reader-name">故事里怎么称呼你？（可留空）<input id="playerName" maxlength="20" placeholder="留空时用“你”称呼" autocomplete="off"></label>
-            <label class="reader-name">主角性别（可选）<select id="playerGender"><option value="">不限定</option><option value="男">男</option><option value="女">女</option></select></label>
-        </div>
-        <p class="reader-note">姓名、性别和首页剧情想法不受下方测评开关影响；已有故事沿用原设定。</p>
         <details id="genrePreferences"><summary>题材与口味（可多选）<span id="genreSelectionCount" class="reader-note"></span></summary>
         <fieldset><legend>选择想看或不想看</legend>
         <p class="reader-note">切换想看或不想看来选择标签；同一标签互斥，不选表示不限。鼠标停在想看标签上，可查看它能带来的阅读体验；具体以你的剧情想法为准。</p>
@@ -35,15 +30,13 @@
         <textarea id="selfSummary" rows="5" maxlength="1000" placeholder="例如：平时先观察，遇到在乎的人被欺负时会主动站出来。"></textarea>
         </details>
         <p><label><input id="profileEnabled" type="checkbox" checked> 将心理期待与代入人设用于故事生成</label></p>
-        <div class="preference-savebar"><p id="profileStatus" role="status"></p><div class="reader-actions"><button class="reader-primary" type="submit">保存偏好</button><button class="reader-secondary" id="clearProfile" type="button">清除长期偏好</button></div><p class="reader-note">清除长期偏好会重置姓名、性别和口味，保留首页剧情想法、草稿和作品。</p></div>
+        <div class="preference-savebar"><p id="profileStatus" role="status"></p><div class="reader-actions"><button class="reader-primary" type="submit">保存偏好</button><button class="reader-secondary" id="clearProfile" type="button">清除长期偏好</button></div><p class="reader-note">清除长期偏好会重置题材、避雷与写法，保留姓名、性别、首页剧情想法、草稿和作品。</p></div>
     </form>
 </main>
 <script src="scripts/reader-preferences.js"></script>
 <script>
 const saved = JimoPreferences.load();
 const answers = saved?.answers || [];
-document.getElementById('playerName').value = JimoPreferences.playerName();
-document.getElementById('playerGender').value = JimoPreferences.playerGender();
 const tagHost = document.getElementById('genreTags');
 const genreModes = [
     ['genreTag', '想看', 'wantedGenreTab', 'wantedGenres'],
@@ -172,7 +165,7 @@ document.getElementById('profileForm').onsubmit = event => {
     event.preventDefault();
     try { localStorage.setItem('user_preference', document.getElementById('writingPreference').value.trim()); }
     catch { status.textContent = '写法未能保存，请重试。'; return; }
-    status.textContent = JimoPreferences.save({ ...(JimoPreferences.load() || {}), playerName: document.getElementById('playerName').value, playerGender: document.getElementById('playerGender').value, answers: currentAnswers(), customAnswers: customAnswers(),
+    status.textContent = JimoPreferences.save({ ...(JimoPreferences.load() || {}), answers: currentAnswers(), customAnswers: customAnswers(),
         tags: [...tagHost.querySelectorAll('input[name=genreTag]:checked')].map(input => input.value),
         excludedTags: [...tagHost.querySelectorAll('input[name=excludedGenreTag]:checked')].map(input => input.value),
         excludedPreference: document.getElementById('excludedPreference').value.trim(),
@@ -186,8 +179,8 @@ document.getElementById('profileForm').onsubmit = event => {
 };
 document.getElementById('clearProfile').onclick = () => {
     try {
-        const idea = JimoPreferences.load()?.generalPreference || '';
-        if (!JimoPreferences.save({ generalPreference: idea, storyEnabled: !!idea, enabled: false, playerName: '', playerGender: '' })) throw new Error('未能保存');
+        const latest = JimoPreferences.load() || {};
+        if (!JimoPreferences.save({ ...latest, storyEnabled: !!latest.generalPreference, enabled: false })) throw new Error('未能保存');
         localStorage.removeItem('user_preference');
         try {
             const draft = JSON.parse(localStorage.getItem('reader_story_draft_v1'));
@@ -198,8 +191,6 @@ document.getElementById('clearProfile').onclick = () => {
         document.getElementById('writingPreference').value = '';
         tagHost.querySelectorAll('input').forEach(input => { input.checked = false; });
         switchGenreMode('wantedGenreTab'); updateGenreCounts();
-        document.getElementById('playerName').value = '';
-        document.getElementById('playerGender').value = '';
         host.querySelectorAll('input').forEach(input => { input.checked = false; });
         selfHost.querySelectorAll('input').forEach(input => { input.checked = false; });
         selfHost.querySelectorAll('textarea').forEach(input => { input.value = ''; input.hidden = true; });

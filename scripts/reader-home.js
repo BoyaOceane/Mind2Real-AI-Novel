@@ -67,8 +67,9 @@ function showOpening(message = '') {
     document.getElementById('preferenceHint').textContent = needsKey ? '设置完成后即可开始，也可以先在右侧写下剧情想法' : JimoPreferences.prompt(opening.readerPreferencesSnapshot) ? '已使用这次剧情想法与阅读偏好' : '可以直接开始，也可以在右侧写下这次想看的剧情';
     document.getElementById('firstReadHint').hidden = !opening.ready || !!localStorage.getItem('current_story_session');
 }
-async function rollWorld(useCurrentIdea = false) {
+async function rollWorld(useCurrentIdea = false, previewOnly = false) {
     if (useCurrentIdea && !JimoHomeIdea.apply()) return false;
+    globalThis.JimoGuide?.openingChanged(false);
     JimoSetup.clearHome();
     entering = false;
     enterWhenReady = false;
@@ -89,11 +90,11 @@ async function rollWorld(useCurrentIdea = false) {
     delete opening.resume;
     saveOpening();
     showOpening();
-    if (!getApiConfig().apiKey) {
+    if (!getApiConfig().apiKey || previewOnly) {
         openingTask = null;
         opening.resume = true;
         saveOpening();
-        showOpening('标签已随机好。设置 API Key 后继续准备背景。');
+        showOpening(previewOnly ? '写下想法或留空随机，点“生成简介”开始。' : '标签已随机好。设置 API Key 后继续准备背景。');
         return;
     }
     const prompt = `世界标签：${JSON.stringify(opening.tags)}\n以上标签仅作随机灵感，先选定一个核心体验，只用相容的维度补足世界；冲突或无关的标签可舍弃，以读者期待为先，不强行融合全部标签。\n虚构角色创作维度：${JSON.stringify(opening.characterTags)}\n${getPrefPrompt()}\n${JimoPreferences.prompt(opening.readerPreferencesSnapshot)}${JimoPreferences.genderPrompt(opening.playerGender)}\n根据以上组合推演自洽世界与沉浸主角背景。不要生成主角姓名，用“你”。身份与规则支撑简介里的优势和回报，使用白话，不堆设定术语。\n${JimoFiction.synopsisGuide(opening)}`;
@@ -128,6 +129,7 @@ async function rollWorld(useCurrentIdea = false) {
         const values = { storyTitle: field('小说名称'), synopsis: field('剧情简介'), title: field('世界名称'), rules: field('底层逻辑'), background: field('身份背景'), conflict: field('起始冲突') };
         if (Object.values(values).some(v => !v)) throw new Error('背景格式不完整，请重试');
         Object.assign(opening, values, { storyPromise: field('追读主线'), ready: true });
+        globalThis.JimoGuide?.openingChanged(true);
         const record = addWorldRecord({ title: opening.title, storyTitle: opening.storyTitle, synopsis: opening.synopsis, content: opening.rules, tags: Object.values(opening.tags),
             playerBackground: opening.background, openingConflict: opening.conflict, storyPromise: opening.storyPromise, characterTags: opening.characterTags, prompt });
         opening.worldId = record.saved ? record.id : null;
@@ -210,7 +212,7 @@ function initReaderHome() {
         }
     } catch { showToast('部分历史记录无法读取，请从书架检查或导出备份'); }
     if (opening?.ready) showOpening();
-    else { if (opening) opening.resume = true; void rollWorld(); }
+    else { if (opening) opening.resume = true; void rollWorld(false, ['api', 'idea', 'ready'].includes(localStorage.getItem('reader_walkthrough_v1'))); }
     window.addEventListener('pagehide', () => { ++openingTicket; openingTask?.abort(); });
 }
 initReaderHome();
